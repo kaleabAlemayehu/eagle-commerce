@@ -2,8 +2,12 @@ package service
 
 import (
 	"errors"
+	"go/token"
+	"os"
+	"time"
 
 	argon "github.com/alexedwards/argon2id"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
@@ -80,15 +84,36 @@ func (s *UserServiceImpl) ListUsers(limit, offset int) ([]*domain.User, error) {
 	return s.repo.List(limit, offset)
 }
 
-func (s *UserServiceImpl) AuthenticateUser(email, password string) (*domain.User, error) {
+func (s *UserServiceImpl) AuthenticateUser(email, password string) (*domain.User, string, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, "", errors.New("invalid credentials")
 	}
 	match, err := argon.ComparePasswordAndHash(user.Password, password)
 	if err != nil || !match {
-		return nil, errors.New("invalid credentials")
+		return nil, "", errors.New("invalid credentials")
+	}
+	token, err := s.generateJWT(user)
+	if err != nil {
+		return nil, "", errors.New("unable to generate JWT")
 	}
 
-	return user, nil
+	return user, token, nil
+}
+
+func (s *UserServiceImpl) generateJWT(user *domain.User) (string, error) {
+
+	// generate jwt token and attach to response
+	tokenStr := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   user.ID,
+		"name":  user.FirstName,
+		"email": user.Email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().AddDate(0, 0, 7).Unix(),
+	})
+	token, err := tokenStr.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }

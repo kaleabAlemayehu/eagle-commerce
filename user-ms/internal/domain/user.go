@@ -39,5 +39,5 @@ type UserService interface {
 	UpdateUser(id string, user *User) error
 	DeleteUser(id string) error
 	ListUsers(limit, offset int) ([]*User, error)
-	AuthenticateUser(email, password string) (*User, error)
+	AuthenticateUser(email, password string) (*User, string, error)
 }
