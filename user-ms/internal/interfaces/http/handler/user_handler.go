@@ -167,7 +167,23 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, user)
+	userRes := &dto.UserResponse{
+		ID:        user.ID.String(),
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Address: &dto.AddressDTO{
+			Street:  user.Address.Street,
+			City:    user.Address.City,
+			State:   user.Address.State,
+			ZipCode: user.Address.ZipCode,
+			Country: user.Address.Country,
+		},
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	h.sendSuccessResponse(w, http.StatusOK, userRes)
 }
 
 // @Summary Delete user by ID
