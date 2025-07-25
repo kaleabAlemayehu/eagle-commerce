@@ -211,6 +211,36 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, http.StatusOK, "Product Deleted Successfully")
 }
 
+// @Summary Check stoke of a new product
+// @Description Check the stock of product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product body CheckStockRequest true "StockCheck data"
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
+// @Failure 404 {object} dto.Response
+// @Router /products/check-stock [post]
+func (h *ProductHandler) StockCheck(w http.ResponseWriter, r *http.Request) {
+	var req dto.StockCheckRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	ok, n, err := h.productService.CheckStock(req.ProductID, req.Quantity)
+	if err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		return
+	}
+	res := dto.StockCheckResponse{
+		ProductID: req.ProductID,
+		Available: ok,
+		Stock:     n,
+		Requested: req.Quantity,
+	}
+	h.sendSuccessResponse(w, http.StatusOK, res)
+}
+
 func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

@@ -28,6 +28,7 @@ func NewRouter(productHandler *handler.ProductHandler) *chi.Mux {
 			r.Post("/", productHandler.CreateProduct)
 			r.Get("/", productHandler.ListProducts)
 			r.Get("/search", productHandler.SearchProducts)
+			r.Post("/check-stock", productHandler.StockCheck)
 			r.Get("/{id}", productHandler.GetProduct)
 			r.Put("/{id}", productHandler.UpdateProduct)
 			r.Delete("/{id}", productHandler.DeleteProduct)
