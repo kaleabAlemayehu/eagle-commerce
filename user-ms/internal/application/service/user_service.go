@@ -49,11 +49,7 @@ func (s *UserServiceImpl) CreateUser(user *domain.User) error {
 	}
 
 	// Publish event
-	if err := s.nats.PublishUserCreated(user); err != nil {
-		return err
-	}
-
-	return nil
+	return s.nats.PublishUserCreated(user)
 }
 
 func (s *UserServiceImpl) GetUser(id string) (*domain.User, error) {
@@ -65,11 +61,17 @@ func (s *UserServiceImpl) UpdateUser(id string, user *domain.User) error {
 		return err
 	}
 
-	return s.repo.Update(id, user)
+	if err := s.repo.Update(id, user); err != nil {
+		return err
+	}
+	return s.nats.PublishUserUpdated(user)
 }
 
 func (s *UserServiceImpl) DeleteUser(id string) error {
-	return s.repo.Delete(id)
+	if err := s.repo.Delete(id); err != nil {
+		return err
+	}
+	return s.nats.PublishUserDeleted(id)
 }
 
 func (s *UserServiceImpl) ListUsers(limit, offset int) ([]*domain.User, error) {
