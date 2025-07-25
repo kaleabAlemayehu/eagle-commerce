@@ -32,25 +32,13 @@ func NewRouter(orderHandler *handler.OrderHandler) *chi.Mux {
 			// Public routes (with auth)
 			r.Group(func(r chi.Router) {
 				r.Use(sharedMiddleware.AuthMiddleware())
-
 				r.Post("/", orderHandler.CreateOrder)
 				r.Get("/", orderHandler.ListOrders)
 				r.Get("/{id}", orderHandler.GetOrder)
 				r.Put("/{id}/status", orderHandler.UpdateOrderStatus)
 				r.Put("/{id}/cancel", orderHandler.CancelOrder)
-
 				// User-specific routes
 				r.Get("/user/{user_id}", orderHandler.GetUserOrders)
-				// r.Get("/{id}/tracking", orderHandler.GetOrderTracking)
-			})
-
-			// Admin routes (additional auth needed)
-			r.Group(func(r chi.Router) {
-				r.Use(sharedMiddleware.AuthMiddleware())
-				// Add admin-only middleware here
-
-				// r.Get("/admin/summary", orderHandler.GetOrderSummary)
-				// r.Put("/admin/{id}/ship", orderHandler.ShipOrder)
 			})
 		})
 	})

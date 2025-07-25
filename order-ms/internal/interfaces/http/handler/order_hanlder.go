@@ -21,49 +21,17 @@ func NewOrderHandler(orderService domain.OrderService) *OrderHandler {
 	}
 }
 
-type CreateOrderRequest struct {
-	UserID  string                   `json:"user_id" validate:"required"`
-	Items   []CreateOrderItemRequest `json:"items" validate:"required,dive"`
-	Address AddressRequest           `json:"address" validate:"required"`
-}
-
-type CreateOrderItemRequest struct {
-	ProductID string  `json:"product_id" validate:"required"`
-	Name      string  `json:"name" validate:"required"`
-	Price     float64 `json:"price" validate:"gt=0"`
-	Quantity  int     `json:"quantity" validate:"gt=0"`
-}
-
-type AddressRequest struct {
-	Street  string `json:"street" validate:"required"`
-	City    string `json:"city" validate:"required"`
-	State   string `json:"state" validate:"required"`
-	ZipCode string `json:"zip_code" validate:"required"`
-	Country string `json:"country" validate:"required"`
-}
-
-type UpdateOrderStatusRequest struct {
-	Status string `json:"status" validate:"required"`
-}
-
-type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
-}
-
 // @Summary Create a new order
 // @Description Create a new order with items and address
 // @Tags orders
 // @Accept json
 // @Produce json
-// @Param order body CreateOrderRequest true "Order data"
+// @Param order body dto.CreateOrderRequest true "Order data"
 // @Success 201 {object} Response
 // @Failure 400 {object} Response
 // @Router /orders [post]
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	var req CreateOrderRequest
+	var req dto.CreateOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -100,8 +68,9 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	orderRes := h.toOrderResponse(order)
 
-	h.sendSuccessResponse(w, http.StatusCreated, order)
+	h.sendSuccessResponse(w, http.StatusCreated, orderRes)
 }
 
 // @Summary Get order list
@@ -142,8 +111,9 @@ func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
 		return
 	}
+	orderRes := h.toOrderResponse(order)
 
-	h.sendSuccessResponse(w, http.StatusOK, order)
+	h.sendSuccessResponse(w, http.StatusOK, orderRes)
 }
 
 // @Summary Get user orders
@@ -170,8 +140,9 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	ordersRes := h.toOrderListResponse(orders)
 
-	h.sendSuccessResponse(w, http.StatusOK, orders)
+	h.sendSuccessResponse(w, http.StatusOK, ordersRes)
 }
 
 // @Summary Update order status
@@ -180,14 +151,14 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Order ID"
-// @Param status body UpdateOrderStatusRequest true "Status update"
+// @Param status body dto.UpdateOrderStatusRequest true "Status update"
 // @Success 200 {object} Response
 // @Failure 400 {object} Response
 // @Router /orders/{id}/status [put]
 func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	var req UpdateOrderStatusRequest
+	var req dto.UpdateOrderStatusRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -200,7 +171,8 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 	}
 
 	updatedOrder, _ := h.orderService.GetOrder(id)
-	h.sendSuccessResponse(w, http.StatusOK, updatedOrder)
+	updatedOrderRes := h.toOrderResponse(updatedOrder)
+	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
 
 // @Summary Cancel order
@@ -220,13 +192,14 @@ func (h *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedOrder, _ := h.orderService.GetOrder(id)
-	h.sendSuccessResponse(w, http.StatusOK, updatedOrder)
+	updatedOrderRes := h.toOrderResponse(updatedOrder)
+	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
 
 func (h *OrderHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: true,
 		Data:    data,
 	})
@@ -235,7 +208,7 @@ func (h *OrderHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int
 func (h *OrderHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   message,
 	})
@@ -244,7 +217,7 @@ func (h *OrderHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, 
 func (h *OrderHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   "Validation failed",
 		Errors:  errors,
