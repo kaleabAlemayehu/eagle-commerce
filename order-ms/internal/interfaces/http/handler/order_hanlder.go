@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/application/dto"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
@@ -226,4 +227,45 @@ func (h *OrderHandler) sendValidationErrorResponse(w http.ResponseWriter, errors
 		Error:   "Validation failed",
 		Errors:  errors,
 	})
+}
+
+func (h *OrderHandler) toOrderResponse(order *domain.Order) *dto.OrderResponse {
+	return &dto.OrderResponse{
+		ID:        order.ID.String(),
+		UserID:    order.UserID,
+		Items:     h.toOrderItemListResponse(order.Items),
+		Total:     order.Total,
+		Status:    string(order.Status),
+		Address:   h.toAddressResponse(order.Address),
+		CreatedAt: order.CreatedAt,
+		UpdatedAt: order.UpdatedAt,
+	}
+}
+
+func (h *OrderHandler) toOrderItemListResponse(orderItems []domain.OrderItem) []dto.OrderItemResponse {
+	res := make([]dto.OrderItemResponse, len(orderItems))
+	for i, o := range orderItems {
+		res[i] = h.toOrderItem(o)
+	}
+	return res
+}
+
+func (h *OrderHandler) toAddressResponse(adr domain.Address) dto.AddressResponse {
+	return dto.AddressResponse{
+		Street:  adr.Street,
+		State:   adr.State,
+		City:    adr.City,
+		ZipCode: adr.ZipCode,
+		Country: adr.Country,
+	}
+}
+
+func (h *OrderHandler) toOrderItem(orderItem domain.OrderItem) dto.OrderItemResponse {
+	return dto.OrderItemResponse{
+		ProductID: orderItem.ProductID,
+		Name:      orderItem.Name,
+		Price:     orderItem.Price,
+		Quantity:  orderItem.Quantity,
+		Subtotal:  orderItem.Price * float64(orderItem.Quantity),
+	}
 }
