@@ -2,6 +2,13 @@ package dto
 
 import "time"
 
+type Response struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
+}
+
 type ProcessPaymentRequest struct {
 	OrderID     string       `json:"order_id" validate:"required"`
 	UserID      string       `json:"user_id" validate:"required"`

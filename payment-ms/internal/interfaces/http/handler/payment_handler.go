@@ -21,13 +21,6 @@ func NewPaymentHandler(paymentService domain.PaymentService) *PaymentHandler {
 	}
 }
 
-type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
-}
-
 // TODO: for webhook
 func (h *PaymentHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
@@ -39,8 +32,8 @@ func (h *PaymentHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param payment body dto.ProcessPaymentRequest true "Payment data"
-// @Success 201 {object} Response
-// @Failure 400 {object} Response
+// @Success 201 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /payments [post]
 func (h *PaymentHandler) ProcessPayment(w http.ResponseWriter, r *http.Request) {
 	var req dto.ProcessPaymentRequest
@@ -87,8 +80,8 @@ func (h *PaymentHandler) ProcessPayment(w http.ResponseWriter, r *http.Request) 
 // @Tags payments
 // @Produce json
 // @Param id path string true "Payment ID"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
 // @Router /payments/{id} [get]
 func (h *PaymentHandler) GetPayment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -120,8 +113,8 @@ func (h *PaymentHandler) GetPayment(w http.ResponseWriter, r *http.Request) {
 // @Tags payments
 // @Produce json
 // @Param order_id path string true "Order ID"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
 // @Router /payments/order/{order_id} [get]
 func (h *PaymentHandler) GetPaymentByOrder(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "order_id")
@@ -155,8 +148,8 @@ func (h *PaymentHandler) GetPaymentByOrder(w http.ResponseWriter, r *http.Reques
 // @Produce json
 // @Param id path string true "Payment ID"
 // @Param refund body dto.RefundPaymentRequest false "Refund details"
-// @Success 200 {object} Response
-// @Failure 400 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /payments/{id}/refund [post]
 func (h *PaymentHandler) RefundPayment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -192,7 +185,7 @@ func (h *PaymentHandler) RefundPayment(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
-// @Success 200 {object} Response
+// @Success 200 {object} dto.Response
 // @Router /payments [get]
 func (h *PaymentHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -230,7 +223,7 @@ func (h *PaymentHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 func (h *PaymentHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: true,
 		Data:    data,
 	})
@@ -239,7 +232,7 @@ func (h *PaymentHandler) sendSuccessResponse(w http.ResponseWriter, statusCode i
 func (h *PaymentHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   message,
 	})
@@ -248,7 +241,7 @@ func (h *PaymentHandler) sendErrorResponse(w http.ResponseWriter, statusCode int
 func (h *PaymentHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   "Validation failed",
 		Errors:  errors,
