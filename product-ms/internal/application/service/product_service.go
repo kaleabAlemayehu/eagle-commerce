@@ -2,21 +2,22 @@ package service
 
 import (
 	"errors"
+
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
 type ProductServiceImpl struct {
-	repo       domain.ProductRepository
-	natsClient *messaging.NATSClient
+	repo domain.ProductRepository
+	nats *messaging.ProductEventPublisher
 }
 
-func NewProductService(repo domain.ProductRepository, natsClient *messaging.NATSClient) domain.ProductService {
+func NewProductService(repo domain.ProductRepository, nats *messaging.ProductEventPublisher) domain.ProductService {
 	return &ProductServiceImpl{
-		repo:       repo,
-		natsClient: natsClient,
+		repo: repo,
+		nats: nats,
 	}
 }
 
@@ -30,19 +31,7 @@ func (s *ProductServiceImpl) CreateProduct(product *domain.Product) error {
 	}
 
 	// Publish event
-	event := models.Event{
-		Type:   models.ProductCreatedEvent,
-		Source: "product-service",
-		Data: map[string]interface{}{
-			"product_id": product.ID.Hex(),
-			"name":       product.Name,
-			"price":      product.Price,
-			"stock":      product.Stock,
-		},
-	}
-	s.natsClient.Publish("product.created", event)
-
-	return nil
+	return s.nats.PublishProductCreated(product)
 }
 
 func (s *ProductServiceImpl) GetProduct(id string) (*domain.Product, error) {
@@ -58,20 +47,7 @@ func (s *ProductServiceImpl) UpdateProduct(id string, product *domain.Product) e
 		return err
 	}
 
-	// Publish event
-	event := models.Event{
-		Type:   models.ProductUpdatedEvent,
-		Source: "product-service",
-		Data: map[string]interface{}{
-			"product_id": id,
-			"name":       product.Name,
-			"price":      product.Price,
-			"stock":      product.Stock,
-		},
-	}
-	s.natsClient.Publish("product.updated", event)
-
-	return nil
+	return s.nats.PublishProductUpdated(product)
 }
 
 func (s *ProductServiceImpl) DeleteProduct(id string) error {
@@ -96,7 +72,7 @@ func (s *ProductServiceImpl) CheckStock(id string, quantity int) (bool, int, err
 }
 
 func (s *ProductServiceImpl) ReserveStock(id string, quantity int) error {
-	hasStock, _, err := s.CheckStock(id, quantity)
+	hasStock, n, err := s.CheckStock(id, quantity)
 	if err != nil {
 		return err
 	}
@@ -105,5 +81,7 @@ func (s *ProductServiceImpl) ReserveStock(id string, quantity int) error {
 		return errors.New("insufficient stock")
 	}
 
-	return s.repo.UpdateStock(id, quantity)
+	s.repo.UpdateStock(id, quantity)
+
+	return s.nats.PublishStockUpdated(id, n, quantity)
 }
