@@ -1,7 +1,13 @@
-// services/user-ms/internal/application/dto/user_dto.go
 package dto
 
 import "time"
+
+type Response struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
+}
 
 type CreateUserRequest struct {
 	Email     string `json:"email" validate:"required,email"`
@@ -47,12 +53,4 @@ type LoginResponse struct {
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
 	NewPassword     string `json:"new_password" validate:"required,min=6"`
-}
-
-type UserListResponse struct {
-	Users      []UserResponse `json:"users"`
-	Total      int            `json:"total"`
-	Page       int            `json:"page"`
-	PerPage    int            `json:"per_page"`
-	TotalPages int            `json:"total_pages"`
 }
