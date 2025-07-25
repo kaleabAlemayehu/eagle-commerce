@@ -1,0 +1,192 @@
+definitions:
+  dto.CardDetails:
+    properties:
+      cvv:
+        type: string
+      expiry_month:
+        maximum: 12
+        minimum: 1
+        type: integer
+      expiry_year:
+        type: integer
+      holder_name:
+        type: string
+      number:
+        type: string
+    required:
+    - cvv
+    - expiry_month
+    - expiry_year
+    - holder_name
+    - number
+    type: object
+  dto.ProcessPaymentRequest:
+    properties:
+      amount:
+        type: number
+      card_details:
+        $ref: '#/definitions/dto.CardDetails'
+      currency:
+        type: string
+      method:
+        enum:
+        - card
+        - paypal
+        - bank
+        type: string
+      order_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - currency
+    - method
+    - order_id
+    - user_id
+    type: object
+  dto.RefundPaymentRequest:
+    properties:
+      amount:
+        description: Partial refund amount
+        type: number
+      reason:
+        type: string
+    type: object
+  handler.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      errors: {}
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /payments:
+    get:
+      description: Get paginated list of payments
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: List payments
+      tags:
+      - payments
+    post:
+      consumes:
+      - application/json
+      description: Process payment for an order
+      parameters:
+      - description: Payment data
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProcessPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Process a payment
+      tags:
+      - payments
+  /payments/{id}:
+    get:
+      description: Get payment details by ID
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Get payment by ID
+      tags:
+      - payments
+  /payments/{id}/refund:
+    post:
+      consumes:
+      - application/json
+      description: Refund a completed payment
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Refund details
+        in: body
+        name: refund
+        schema:
+          $ref: '#/definitions/dto.RefundPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Refund payment
+      tags:
+      - payments
+  /payments/order/{order_id}:
+    get:
+      description: Get payment details by order ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.Response'
+      summary: Get payment by order ID
+      tags:
+      - payments
+swagger: "2.0"
