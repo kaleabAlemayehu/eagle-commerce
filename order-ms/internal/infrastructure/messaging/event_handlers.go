@@ -117,6 +117,7 @@ func (h *OrderEventHandler) handleStockCheckResponse(data []byte) {
 	log.Printf("Stock check response for product %s (request %s): available=%t",
 		productID, requestID, available)
 
+	// INFO:
 	// Here you could store the response for correlation with pending orders
 	// or handle insufficient stock scenarios
 }

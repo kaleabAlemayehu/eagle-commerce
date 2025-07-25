@@ -107,6 +107,8 @@ func (h *UserEventHandler) handleOrderCreated(data []byte) {
 	}
 
 	log.Printf("User %s created a new order: %s", userID, event.Data["order_id"])
+
+	// INFO:
 	// Here you could update user statistics, send notifications, etc.
 }
 
@@ -117,6 +119,7 @@ func (h *UserEventHandler) handlePaymentProcessed(data []byte) {
 		return
 	}
 
+	// INFO:
 	// Handle payment processing for user notifications, etc.
 	log.Printf("Payment processed: %+v", event.Data)
 }

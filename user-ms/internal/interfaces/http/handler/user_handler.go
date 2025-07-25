@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
@@ -20,11 +21,27 @@ func NewUserHandler(userService domain.UserService) *UserHandler {
 	}
 }
 
+type Address struct {
+	Street  string `json:"street" bson:"street"`
+	City    string `json:"city" bson:"city"`
+	State   string `json:"state" bson:"state"`
+	ZipCode string `json:"zip_code" bson:"zip_code"`
+	Country string `json:"country" bson:"country"`
+}
+
 type CreateUserRequest struct {
 	Email     string `json:"email" validate:"required,email"`
 	Password  string `json:"password" validate:"required,min=6"`
 	FirstName string `json:"first_name" validate:"required"`
 	LastName  string `json:"last_name" validate:"required"`
+}
+
+type UpdateUserRequest struct {
+	Email     string    `json:"email" bson:"email" validate:"required,email"`
+	FirstName string    `json:"first_name" bson:"first_name" validate:"required"`
+	LastName  string    `json:"last_name" bson:"last_name" validate:"required"`
+	Address   Address   `json:"address" bson:"address"`
+	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
 }
 
 type Response struct {
@@ -112,6 +129,37 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sendSuccessResponse(w, http.StatusOK, users)
+}
+
+// @Summary Put user by ID
+// @Description Update user details by ID
+// @Tags users
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 201 {object} Response
+// @Failure 400 {object} Response
+// @Router /users/{id} [put]
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var req UpdateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	user := &domain.User{
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Address:   domain.Address(req.Address),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := h.userService.UpdateUser(id, user); err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
+		return
+	}
+
+	h.sendSuccessResponse(w, http.StatusOK, user)
 }
 
 func (h *UserHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {

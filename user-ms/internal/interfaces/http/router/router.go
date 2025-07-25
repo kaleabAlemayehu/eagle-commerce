@@ -29,6 +29,7 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 			r.Post("/", userHandler.CreateUser)
 			r.Get("/", userHandler.ListUsers)
 			r.Get("/{id}", userHandler.GetUser)
+			r.Put("/{id}", userHandler.UpdateUser)
 		})
 	})
 
