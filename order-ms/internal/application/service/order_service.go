@@ -5,31 +5,23 @@ import (
 	"errors"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
 type OrderServiceImpl struct {
-	repo       domain.OrderRepository
-	natsClient *messaging.NATSClient
+	repo domain.OrderRepository
+	nats *messaging.OrderEventPublisher
 }
 
-func NewOrderService(repo domain.OrderRepository, natsClient *messaging.NATSClient) domain.OrderService {
+func NewOrderService(repo domain.OrderRepository, nats *messaging.OrderEventPublisher) domain.OrderService {
 	service := &OrderServiceImpl{
-		repo:       repo,
-		natsClient: natsClient,
+		repo: repo,
+		nats: nats,
 	}
 
-	// Subscribe to events
-	service.subscribeToEvents()
-
 	return service
-}
-
-func (s *OrderServiceImpl) subscribeToEvents() {
-	// Subscribe to payment events
-	s.natsClient.Subscribe("payment.processed", s.handlePaymentProcessed)
 }
 
 func (s *OrderServiceImpl) handlePaymentProcessed(data []byte) {
@@ -80,49 +72,20 @@ func (s *OrderServiceImpl) CreateOrder(order *domain.Order) error {
 	// Reserve stock for all items
 	s.reserveStock(order.Items)
 
-	// Publish order created event
-	event := models.Event{
-		Type:   models.OrderCreatedEvent,
-		Source: "order-service",
-		Data: map[string]interface{}{
-			"order_id": order.ID.Hex(),
-			"user_id":  order.UserID,
-			"total":    order.Total,
-			"items":    order.Items,
-		},
-	}
-	s.natsClient.Publish("order.created", event)
-
-	return nil
+	return s.nats.PublishOrderCreated(order)
 }
 
 func (s *OrderServiceImpl) checkStockAvailability(items []domain.OrderItem) error {
 	for _, item := range items {
 		// Publish stock check request
-		event := models.Event{
-			Type:   "stock.check",
-			Source: "order-service",
-			Data: map[string]interface{}{
-				"product_id": item.ProductID,
-				"quantity":   item.Quantity,
-			},
-		}
-		s.natsClient.Publish("stock.check", event)
+		s.nats.PublishStockCheck(&item)
 	}
 	return nil // In real implementation, wait for response
 }
 
 func (s *OrderServiceImpl) reserveStock(items []domain.OrderItem) {
 	for _, item := range items {
-		event := models.Event{
-			Type:   "stock.reserve",
-			Source: "order-service",
-			Data: map[string]interface{}{
-				"product_id": item.ProductID,
-				"quantity":   item.Quantity,
-			},
-		}
-		s.natsClient.Publish("stock.reserve", event)
+		s.nats.PublishReserveStock(&item)
 	}
 }
 
@@ -150,18 +113,8 @@ func (s *OrderServiceImpl) UpdateOrderStatus(id string, status domain.OrderStatu
 	}
 
 	// Publish order updated event
-	event := models.Event{
-		Type:   models.OrderUpdatedEvent,
-		Source: "order-service",
-		Data: map[string]interface{}{
-			"order_id": id,
-			"status":   status,
-			"user_id":  order.UserID,
-		},
-	}
-	s.natsClient.Publish("order.updated", event)
 
-	return nil
+	return s.nats.PublishOrderUpdated(order, status)
 }
 
 func (s *OrderServiceImpl) CancelOrder(id string) error {
