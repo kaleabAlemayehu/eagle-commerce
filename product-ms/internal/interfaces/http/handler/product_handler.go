@@ -216,12 +216,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 // @Tags products
 // @Accept json
 // @Produce json
-// @Param product body CheckStockRequest true "StockCheck data"
+// @Param product body CheckStockRequest true "CheckStock data"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
 // @Failure 404 {object} dto.Response
 // @Router /products/check-stock [post]
-func (h *ProductHandler) StockCheck(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 	var req dto.StockCheckRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -239,6 +239,33 @@ func (h *ProductHandler) StockCheck(w http.ResponseWriter, r *http.Request) {
 		Requested: req.Quantity,
 	}
 	h.sendSuccessResponse(w, http.StatusOK, res)
+}
+
+// @Summary Check stoke of a new product
+// @Description Check the stock of product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product body CheckStockRequest true "CheckStock data"
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
+// @Failure 404 {object} dto.Response
+// @Router /products/reserve-stock [post]
+func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
+	var req dto.StockUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if err := utils.ValidateStruct(req); err != nil {
+		h.sendValidationErrorResponse(w, err)
+		return
+	}
+	if err := h.productService.ReserveStock(req.ProductID, req.Quantity); err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		return
+	}
+	h.sendSuccessResponse(w, http.StatusOK, "Stock reserved successfully")
 }
 
 func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
