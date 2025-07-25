@@ -38,6 +38,9 @@ func main() {
 	defer natsClient.Close()
 	nats := messaging.NewUserEventPublisher(natsClient)
 
+	// listening for the incoming events from other services
+	messaging.NewUserEventHandler(natsClient).StartListening()
+
 	// Initialize dependencies
 	userRepo := repository.NewMongoUserRepository(db.Database)
 	userService := service.NewUserService(userRepo, nats)
