@@ -35,6 +35,6 @@ type ProductService interface {
 	DeleteProduct(id string) error
 	ListProducts(limit, offset int, category string) ([]*Product, error)
 	SearchProducts(query string, limit, offset int) ([]*Product, error)
-	CheckStock(id string, quantity int) (bool, error)
+	CheckStock(id string, quantity int) (bool, int, error)
 	ReserveStock(id string, quantity int) error
 }

@@ -86,17 +86,17 @@ func (s *ProductServiceImpl) SearchProducts(query string, limit, offset int) ([]
 	return s.repo.Search(query, limit, offset)
 }
 
-func (s *ProductServiceImpl) CheckStock(id string, quantity int) (bool, error) {
+func (s *ProductServiceImpl) CheckStock(id string, quantity int) (bool, int, error) {
 	product, err := s.repo.GetByID(id)
 	if err != nil {
-		return false, err
+		return false, -1, err
 	}
 
-	return product.Stock >= quantity, nil
+	return product.Stock >= quantity, product.Stock, nil
 }
 
 func (s *ProductServiceImpl) ReserveStock(id string, quantity int) error {
-	hasStock, err := s.CheckStock(id, quantity)
+	hasStock, _, err := s.CheckStock(id, quantity)
 	if err != nil {
 		return err
 	}

@@ -41,6 +41,11 @@ type Response struct {
 	Errors  interface{} `json:"errors,omitempty"`
 }
 
+type ProductListResponse struct {
+	Products []ProductResponse `json:"products"`
+	Total    int               `json:"total"`
+}
+
 type ProductSearchResponse struct {
 	Products []ProductResponse `json:"products"`
 	Query    string            `json:"query"`
