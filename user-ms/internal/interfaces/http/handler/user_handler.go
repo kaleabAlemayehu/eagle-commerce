@@ -53,6 +53,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	userRes := &dto.UserResponse{
 		ID:        user.ID.String(),
 		Email:     user.Email,
@@ -184,6 +185,47 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.sendSuccessResponse(w, http.StatusOK, "User Successfully Deleted")
+}
+
+// @Summary Login user
+// @Description Login user
+// @Tags users
+// @Produce json
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
+// @Failure 401 {object} dto.Response
+// @Router /users/login [post]
+func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	var req dto.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	user, token, err := h.userService.AuthenticateUser(req.Email, req.Password)
+	if err != nil {
+		h.sendErrorResponse(w, http.StatusUnauthorized, "Unauthorized user")
+		return
+	}
+
+	loginRes := dto.LoginResponse{
+		User: dto.UserResponse{
+			ID:        user.ID.String(),
+			Email:     user.Email,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Address: &dto.AddressDTO{
+				Street:  user.Address.Street,
+				City:    user.Address.City,
+				State:   user.Address.State,
+				ZipCode: user.Address.ZipCode,
+				Country: user.Address.Country,
+			},
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+		},
+		Token: token,
+	}
+	h.sendSuccessResponse(w, http.StatusOK, loginRes)
 }
 
 func (h *UserHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
