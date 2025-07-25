@@ -1,23 +1,23 @@
-// services/user-ms/internal/interfaces/http/router/router.go
 package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	mw "github.com/go-chi/chi/v5/middleware"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/handler"
-	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
+	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/middleware"
 )
 
 func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Heartbeat("/health"))
+	r.Use(mw.Logger)
+	r.Use(mw.Recoverer)
+	r.Use(mw.RequestID)
+	r.Use(mw.Heartbeat("/health"))
 
 	// Swagger
 	r.Get("/swagger/*", httpSwagger.Handler(
@@ -31,7 +31,7 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 				r.Post("/login", userHandler.LoginUser)
 			})
 			r.Route("/users", func(r chi.Router) {
-				r.Use(sharedMiddleware.AuthMiddleware())
+				r.Use(middleware.AuthMiddleware())
 				r.Post("/", userHandler.CreateUser)
 				r.Get("/", userHandler.ListUsers)
 				r.Get("/{id}", userHandler.GetUser)

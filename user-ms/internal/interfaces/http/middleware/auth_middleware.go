@@ -1,4 +1,3 @@
-// services/user-ms/internal/interfaces/http/middleware/auth_middleware.go
 package middleware
 
 import (

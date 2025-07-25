@@ -1,4 +1,3 @@
-// services/order-ms/internal/infrastructure/messaging/order_events.go
 package messaging
 
 import (

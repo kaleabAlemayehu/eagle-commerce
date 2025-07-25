@@ -1,4 +1,3 @@
-// services/payment-ms/internal/interfaces/http/router/router.go
 package router
 
 import (

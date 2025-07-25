@@ -26,7 +26,7 @@ func NewProductHandler(productService domain.ProductService) *ProductHandler {
 // @Tags products
 // @Accept json
 // @Produce json
-// @Param product body CreateProductRequest true "Product data"
+// @Param product body dto.CreateProductRequest true "Product data"
 // @Success 201 {object} dto.Response
 // @Failure 400 {object} dto.Response
 // @Router /products [post]

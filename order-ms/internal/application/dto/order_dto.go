@@ -1,4 +1,3 @@
-// services/order-ms/internal/application/dto/order_dto.go
 package dto
 
 import "time"

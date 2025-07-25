@@ -1,4 +1,3 @@
-// services/payment-ms/internal/infrastructure/messaging/payment_events.go
 package messaging
 
 import (

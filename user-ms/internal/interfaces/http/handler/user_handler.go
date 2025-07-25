@@ -27,7 +27,7 @@ func NewUserHandler(userService domain.UserService) *UserHandler {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body CreateUserRequest true "User data"
+// @Param user body dto.CreateUserRequest true "User data"
 // @Success 201 {object} dto.Response
 // @Failure 400 {object} dto.Response
 // @Router /users [post]
