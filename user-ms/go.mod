@@ -5,8 +5,10 @@ go 1.24.3
 require (
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/kaleabAlemayehu/eagle-commerce/shared v0.0.0
 	github.com/swaggo/http-swagger v1.3.4
+	github.com/swaggo/swag v1.8.1
 	go.mongodb.org/mongo-driver v1.17.4
 )
 
@@ -20,7 +22,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
@@ -31,7 +32,6 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
-	github.com/swaggo/swag v1.8.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
