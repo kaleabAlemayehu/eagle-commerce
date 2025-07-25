@@ -94,6 +94,32 @@ func (p *OrderEventPublisher) PublishOrderShipped(order *domain.Order, trackingI
 	return p.natsClient.Publish("order.shipped", event)
 }
 
+func (p *OrderEventPublisher) PublishStockCheck(item *domain.OrderItem) error {
+	// Publish stock check request
+	event := models.Event{
+		Type:   "stock.check",
+		Source: "order-service",
+		Data: map[string]interface{}{
+			"product_id": item.ProductID,
+			"quantity":   item.Quantity,
+		},
+	}
+	return p.natsClient.Publish("stock.check", event)
+}
+
+func (p *OrderEventPublisher) PublishReserveStock(item *domain.OrderItem) error {
+	// Publish stock check request
+	event := models.Event{
+		Type:   "stock.reserve",
+		Source: "order-service",
+		Data: map[string]interface{}{
+			"product_id": item.ProductID,
+			"quantity":   item.Quantity,
+		},
+	}
+	return p.natsClient.Publish("stock.reserve", event)
+}
+
 func generateEventID() string {
 	return time.Now().Format("20060102150405") + "-" + "order"
 }
