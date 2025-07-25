@@ -2,13 +2,11 @@ package service
 
 import (
 	"errors"
-	"os"
-	"time"
 
 	argon "github.com/alexedwards/argon2id"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/messaging"
+	"github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
@@ -87,27 +85,10 @@ func (s *UserServiceImpl) AuthenticateUser(email, password string) (*domain.User
 	if err != nil || !match {
 		return nil, "", errors.New("invalid credentials")
 	}
-	token, err := s.generateJWT(user)
+	token, err := middleware.GenerateJWT(user.ID.String(), user.Email)
 	if err != nil {
 		return nil, "", errors.New("unable to generate JWT")
 	}
 
 	return user, token, nil
-}
-
-func (s *UserServiceImpl) generateJWT(user *domain.User) (string, error) {
-
-	// generate jwt token and attach to response
-	tokenStr := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":   user.ID,
-		"name":  user.FirstName,
-		"email": user.Email,
-		"iat":   time.Now().Unix(),
-		"exp":   time.Now().AddDate(0, 0, 7).Unix(),
-	})
-	token, err := tokenStr.SignedString([]byte(os.Getenv("JWT_SECRET")))
-	if err != nil {
-		return "", err
-	}
-	return token, nil
 }
