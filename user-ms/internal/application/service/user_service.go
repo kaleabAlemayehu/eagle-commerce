@@ -2,27 +2,25 @@ package service
 
 import (
 	"errors"
-	"go/token"
 	"os"
 	"time"
 
 	argon "github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
+	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
 type UserServiceImpl struct {
-	repo       domain.UserRepository
-	natsClient *messaging.NATSClient
+	repo domain.UserRepository
+	nats *messaging.UserEventPublisher
 }
 
-func NewUserService(repo domain.UserRepository, natsClient *messaging.NATSClient) domain.UserService {
+func NewUserService(repo domain.UserRepository, nats *messaging.UserEventPublisher) domain.UserService {
 	return &UserServiceImpl{
-		repo:       repo,
-		natsClient: natsClient,
+		repo: repo,
+		nats: nats,
 	}
 }
 
@@ -51,15 +49,9 @@ func (s *UserServiceImpl) CreateUser(user *domain.User) error {
 	}
 
 	// Publish event
-	event := models.Event{
-		Type:   models.UserCreatedEvent,
-		Source: "user-service",
-		Data: map[string]interface{}{
-			"user_id": user.ID.Hex(),
-			"email":   user.Email,
-		},
+	if err := s.nats.PublishUserCreated(user); err != nil {
+		return err
 	}
-	s.natsClient.Publish("user.created", event)
 
 	return nil
 }

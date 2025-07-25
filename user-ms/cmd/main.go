@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/application/service"
+	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/handler"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
 // @title User Service API
@@ -30,15 +31,16 @@ func main() {
 	defer db.Close()
 
 	// Connect to NATS
-	natsClient, err := messaging.NewNATSClient(cfg.NATS.URL)
+	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
 	defer natsClient.Close()
+	nats := messaging.NewUserEventPublisher(natsClient)
 
 	// Initialize dependencies
 	userRepo := repository.NewMongoUserRepository(db.Database)
-	userService := service.NewUserService(userRepo, natsClient)
+	userService := service.NewUserService(userRepo, nats)
 	userHandler := handler.NewUserHandler(userService)
 
 	// Setup router

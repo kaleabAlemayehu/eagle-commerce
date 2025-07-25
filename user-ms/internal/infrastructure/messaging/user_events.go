@@ -1,4 +1,3 @@
-// services/user-ms/internal/infrastructure/messaging/user_events.go
 package messaging
 
 import (
