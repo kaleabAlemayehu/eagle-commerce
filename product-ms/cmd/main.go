@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
+	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/handler"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
 // @title Product Service API
@@ -30,16 +31,20 @@ func main() {
 	defer db.Close()
 
 	// Connect to NATS
-	natsClient, err := messaging.NewNATSClient(cfg.NATS.URL)
+	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
 	defer natsClient.Close()
+	nats := messaging.NewProductEventPublisher(natsClient)
 
 	// Initialize dependencies
 	productRepo := repository.NewMongoProductRepository(db.Database)
-	productService := service.NewProductService(productRepo, natsClient)
+	productService := service.NewProductService(productRepo, nats)
 	productHandler := handler.NewProductHandler(productService)
+	if err = messaging.NewProductEventHandler(productService, natsClient).StartListening(); err != nil {
+		log.Fatal("Failed to listen events: ", err)
+	}
 
 	// Setup router
 	r := router.NewRouter(productHandler)

@@ -125,7 +125,7 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 		return
 	}
 
-	available, err := h.productService.CheckStock(productID, int(quantity))
+	available, _, err := h.productService.CheckStock(productID, int(quantity))
 	if err != nil {
 		log.Printf("Error checking stock: %v", err)
 		return
