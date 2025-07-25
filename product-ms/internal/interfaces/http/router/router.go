@@ -30,6 +30,7 @@ func NewRouter(productHandler *handler.ProductHandler) *chi.Mux {
 			r.Get("/search", productHandler.SearchProducts)
 			r.Get("/{id}", productHandler.GetProduct)
 			r.Put("/{id}", productHandler.UpdateProduct)
+			r.Delete("/{id}", productHandler.DeleteProduct)
 		})
 	})
 

@@ -192,6 +192,25 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
 
+// @Summary Delete product by ID
+// @Description Delete product details by ID
+// @Tags products
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
+// @Router /products/{id} [delete]
+func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if err := h.productService.DeleteProduct(id); err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		return
+	}
+
+	h.sendSuccessResponse(w, http.StatusOK, "Product Deleted Successfully")
+}
+
 func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
