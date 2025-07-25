@@ -7,6 +7,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/handler"
+	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
 func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
@@ -26,12 +27,17 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 	// Routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/login", userHandler.LoginUser)
-			r.Post("/", userHandler.CreateUser)
-			r.Get("/", userHandler.ListUsers)
-			r.Get("/{id}", userHandler.GetUser)
-			r.Put("/{id}", userHandler.UpdateUser)
-			r.Delete("/{id}", userHandler.DeleteUser)
+			r.Route("/users", func(r chi.Router) {
+				r.Post("/login", userHandler.LoginUser)
+			})
+			r.Route("/users", func(r chi.Router) {
+				r.Use(sharedMiddleware.AuthMiddleware())
+				r.Post("/", userHandler.CreateUser)
+				r.Get("/", userHandler.ListUsers)
+				r.Get("/{id}", userHandler.GetUser)
+				r.Put("/{id}", userHandler.UpdateUser)
+				r.Delete("/{id}", userHandler.DeleteUser)
+			})
 		})
 	})
 

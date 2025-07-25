@@ -34,6 +34,7 @@ func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
 
 		// Product service routes
 		r.Route("/products", func(r chi.Router) {
+			r.Use(gatewayMiddleware.Auth())
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("product"))
 		})
 
