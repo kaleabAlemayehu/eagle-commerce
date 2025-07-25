@@ -6,13 +6,14 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/application/service"
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/infrastructure/external"
+	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/interfaces/http/handler"
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
 func main() {
@@ -24,16 +25,20 @@ func main() {
 	}
 	defer db.Close()
 
-	natsClient, err := messaging.NewNATSClient(cfg.NATS.URL)
+	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
 	defer natsClient.Close()
+	paymentPublisher := messaging.NewPaymentEventPublisher(natsClient)
 
 	paymentRepo := repository.NewMongoPaymentRepository(db.Database)
 	paymentGetway := external.NewMockPaymentGateway()
-	paymentService := service.NewPaymentService(paymentRepo, natsClient, paymentGetway)
+	paymentService := service.NewPaymentService(paymentRepo, paymentPublisher, paymentGetway)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
+	if err := messaging.NewPaymentEventHandler(paymentService, natsClient).StartListening(); err != nil {
+		log.Fatal("Failed to listen events from NATS:", err)
+	}
 
 	r := router.NewRouter(paymentHandler)
 	port := "8084"
