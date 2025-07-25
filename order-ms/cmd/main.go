@@ -6,12 +6,13 @@ import (
 	"net/http"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/application/service"
+	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/interfaces/http/handler"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
 // @title Order Service API
@@ -30,16 +31,20 @@ func main() {
 	defer db.Close()
 
 	// Connect to NATS
-	natsClient, err := messaging.NewNATSClient(cfg.NATS.URL)
+	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
 	defer natsClient.Close()
+	nats := messaging.NewOrderEventPublisher(natsClient)
 
 	// Initialize dependencies
 	orderRepo := repository.NewMongoOrderRepository(db.Database)
-	orderService := service.NewOrderService(orderRepo, natsClient)
+	orderService := service.NewOrderService(orderRepo, nats)
 	orderHandler := handler.NewOrderHandler(orderService)
+	if err := messaging.NewOrderEventHandler(orderService, natsClient).StartListening(); err != nil {
+		log.Fatal("Failed to listen NATS events:", err)
+	}
 
 	// Setup router
 	r := router.NewRouter(orderHandler)
