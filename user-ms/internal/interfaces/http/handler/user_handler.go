@@ -138,6 +138,7 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "User ID"
 // @Success 201 {object} Response
 // @Failure 400 {object} Response
+// @Failure 404 {object} Response
 // @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -160,6 +161,23 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sendSuccessResponse(w, http.StatusOK, user)
+}
+
+// @Summary Delete user by ID
+// @Description Delete user details by ID
+// @Tags users
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
+// @Router /users/{id} [delete]
+func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.userService.DeleteUser(id); err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
+		return
+	}
+	h.sendSuccessResponse(w, http.StatusOK, "User Successfully Deleted")
 }
 
 func (h *UserHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {

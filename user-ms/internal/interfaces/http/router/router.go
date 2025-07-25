@@ -30,6 +30,7 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 			r.Get("/", userHandler.ListUsers)
 			r.Get("/{id}", userHandler.GetUser)
 			r.Put("/{id}", userHandler.UpdateUser)
+			r.Delete("/{id}", userHandler.DeleteUser)
 		})
 	})
 
