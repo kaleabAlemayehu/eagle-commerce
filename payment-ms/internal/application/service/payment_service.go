@@ -1,13 +1,11 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/infrastructure/external"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
+	"github.com/kaleabAlemayehu/eagle-commerce/payment-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
@@ -15,58 +13,17 @@ import (
 
 type PaymentServiceImpl struct {
 	repo           domain.PaymentRepository
-	natsClient     *messaging.NATSClient
+	nats           *messaging.PaymentEventPublisher
 	paymentGateway external.PaymentGateway
 }
 
-func NewPaymentService(repo domain.PaymentRepository, natsClient *messaging.NATSClient, pg external.PaymentGateway) domain.PaymentService {
+func NewPaymentService(repo domain.PaymentRepository, nats *messaging.PaymentEventPublisher, pg external.PaymentGateway) domain.PaymentService {
 	service := &PaymentServiceImpl{
 		repo:           repo,
-		natsClient:     natsClient,
+		nats:           nats,
 		paymentGateway: pg,
 	}
-
-	// Subscribe to order events
-	service.subscribeToEvents()
-
 	return service
-}
-
-func (s *PaymentServiceImpl) subscribeToEvents() {
-	s.natsClient.Subscribe("order.created", s.handleOrderCreated)
-}
-
-func (s *PaymentServiceImpl) handleOrderCreated(data []byte) {
-	var event models.Event
-	if err := json.Unmarshal(data, &event); err != nil {
-		return
-	}
-
-	orderID, ok := event.Data["order_id"].(string)
-	if !ok {
-		return
-	}
-
-	userID, ok := event.Data["user_id"].(string)
-	if !ok {
-		return
-	}
-
-	total, ok := event.Data["total"].(float64)
-	if !ok {
-		return
-	}
-
-	// Auto-create payment record
-	payment := &domain.Payment{
-		OrderID:  orderID,
-		UserID:   userID,
-		Amount:   total,
-		Currency: "USD",
-		Method:   domain.PaymentMethodCard, // Default method
-	}
-
-	s.repo.Create(payment)
 }
 
 func (s *PaymentServiceImpl) ProcessPayment(payment *domain.Payment) error {
@@ -86,18 +43,7 @@ func (s *PaymentServiceImpl) ProcessPayment(payment *domain.Payment) error {
 		s.repo.UpdateStatus(payment.ID.Hex(), domain.PaymentStatusFailed)
 
 		// Publish payment failed event
-		event := models.Event{
-			Type:   models.PaymentProcessedEvent,
-			Source: "payment-service",
-			Data: map[string]interface{}{
-				"payment_id": payment.ID.Hex(),
-				"order_id":   payment.OrderID,
-				"status":     "failed",
-				"error":      err.Error(),
-			},
-		}
-		s.natsClient.Publish("payment.processed", event)
-
+		s.nats.PublishPaymentProcessed(payment, false, err.Error())
 		return err
 	}
 
@@ -107,18 +53,7 @@ func (s *PaymentServiceImpl) ProcessPayment(payment *domain.Payment) error {
 	s.repo.Update(payment.ID.Hex(), payment)
 
 	// Publish payment success event
-	event := models.Event{
-		Type:   models.PaymentProcessedEvent,
-		Source: "payment-service",
-		Data: map[string]interface{}{
-			"payment_id":     payment.ID.Hex(),
-			"order_id":       payment.OrderID,
-			"transaction_id": transactionID,
-			"status":         "completed",
-			"amount":         payment.Amount,
-		},
-	}
-	s.natsClient.Publish("payment.processed", event)
+	s.nats.PublishPaymentProcessed(payment, true, "")
 
 	return nil
 }
@@ -152,17 +87,7 @@ func (s *PaymentServiceImpl) RefundPayment(id string) error {
 	}
 
 	// Publish refund event
-	event := models.Event{
-		Type:   "payment.refunded",
-		Source: "payment-service",
-		Data: map[string]interface{}{
-			"payment_id": id,
-			"order_id":   payment.OrderID,
-			"amount":     payment.Amount,
-		},
-	}
-	s.natsClient.Publish("payment.refunded", event)
-
+	s.nats.PublishPaymentRefunded(payment, payment.Amount)
 	return nil
 }
 
