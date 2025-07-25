@@ -1,12 +1,10 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/messaging"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
@@ -22,29 +20,6 @@ func NewOrderService(repo domain.OrderRepository, nats *messaging.OrderEventPubl
 	}
 
 	return service
-}
-
-func (s *OrderServiceImpl) handlePaymentProcessed(data []byte) {
-	var event models.Event
-	if err := json.Unmarshal(data, &event); err != nil {
-		return
-	}
-
-	orderID, ok := event.Data["order_id"].(string)
-	if !ok {
-		return
-	}
-
-	status, ok := event.Data["status"].(string)
-	if !ok {
-		return
-	}
-
-	if status == "completed" {
-		s.UpdateOrderStatus(orderID, domain.OrderStatusConfirmed)
-	} else if status == "failed" {
-		s.UpdateOrderStatus(orderID, domain.OrderStatusCancelled)
-	}
 }
 
 func (s *OrderServiceImpl) CreateOrder(order *domain.Order) error {
