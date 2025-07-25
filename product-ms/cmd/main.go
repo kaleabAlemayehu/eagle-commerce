@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
 	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/repository"
@@ -13,6 +10,8 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	"log"
+	"net/http"
 )
 
 // @title Product Service API

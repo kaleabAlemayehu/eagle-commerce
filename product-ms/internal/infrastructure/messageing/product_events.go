@@ -206,6 +206,7 @@ func (h *ProductEventHandler) handleOrderCancelled(data []byte) {
 			continue
 		}
 
+		// TODO:
 		// Restore stock by adding back the quantity
 		// This would need a RestoreStock method in the service
 		log.Printf("Restoring stock for product %s: %d units", productID, int(quantity))

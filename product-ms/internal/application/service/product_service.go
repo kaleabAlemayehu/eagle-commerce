@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
 	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
