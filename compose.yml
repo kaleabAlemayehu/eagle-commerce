@@ -21,3 +21,85 @@ services:
       - "8222:8222"
     command: "--http_port 8222"
 
+  user-service:
+    build:
+      context: .
+      dockerfile: user-ms/Dockerfile
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+      - NATS_URL=nats://nats:4222
+      - SERVER_PORT=8081
+      - SERVICE_NAME=user-service
+    depends_on:
+      - mongodb
+      - nats
+
+  product-service:
+    build:
+      context: .
+      dockerfile: product-ms/Dockerfile
+    container_name: product-service
+    ports:
+      - "8082:8082"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+      - NATS_URL=nats://nats:4222
+      - SERVER_PORT=8082
+      - SERVICE_NAME=product-service
+    depends_on:
+      - mongodb
+      - nats
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-ms/Dockerfile
+    container_name: order-service
+    ports:
+      - "8083:8083"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+      - NATS_URL=nats://nats:4222
+      - SERVER_PORT=8083
+      - SERVICE_NAME=order-service
+    depends_on:
+      - mongodb
+      - nats
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-ms/Dockerfile
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+      - NATS_URL=nats://nats:4222
+      - SERVER_PORT=8084
+      - SERVICE_NAME=payment-service
+    depends_on:
+      - mongodb
+      - nats
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/ecommerce?authSource=admin
+      - NATS_URL=nats://nats:4222
+      - SERVER_PORT=8080
+      - SERVICE_NAME=api-gateway
+    depends_on:
+      - mongodb
+      - nats
+
+volumes:
+  mongo_data:
