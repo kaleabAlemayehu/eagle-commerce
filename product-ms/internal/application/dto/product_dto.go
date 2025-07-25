@@ -1,4 +1,3 @@
-// services/product-ms/internal/application/dto/product_dto.go
 package dto
 
 import "time"
@@ -35,13 +34,11 @@ type ProductResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-type ProductListResponse struct {
-	Products   []ProductResponse `json:"products"`
-	Total      int               `json:"total"`
-	Page       int               `json:"page"`
-	PerPage    int               `json:"per_page"`
-	TotalPages int               `json:"total_pages"`
-	Category   string            `json:"category,omitempty"`
+type Response struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
 }
 
 type ProductSearchResponse struct {

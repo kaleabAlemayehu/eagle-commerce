@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/dto"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
@@ -20,33 +21,17 @@ func NewProductHandler(productService domain.ProductService) *ProductHandler {
 	}
 }
 
-type CreateProductRequest struct {
-	Name        string   `json:"name" validate:"required"`
-	Description string   `json:"description"`
-	Price       float64  `json:"price" validate:"required,gt=0"`
-	Stock       int      `json:"stock" validate:"gte=0"`
-	Category    string   `json:"category" validate:"required"`
-	Images      []string `json:"images"`
-}
-
-type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
-}
-
 // @Summary Create a new product
 // @Description Create a new product with details
 // @Tags products
 // @Accept json
 // @Produce json
 // @Param product body CreateProductRequest true "Product data"
-// @Success 201 {object} Response
-// @Failure 400 {object} Response
+// @Success 201 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /products [post]
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var req CreateProductRequest
+	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -69,8 +54,20 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	productRes := dto.ProductResponse{
+		ID:          product.ID.String(),
+		Name:        product.Name,
+		Description: product.Description,
+		Price:       product.Price,
+		Stock:       product.Stock,
+		Category:    product.Category,
+		Images:      product.Images,
+		Active:      product.Active,
+		CreatedAt:   product.CreatedAt,
+		UpdatedAt:   product.UpdatedAt,
+	}
 
-	h.sendSuccessResponse(w, http.StatusCreated, product)
+	h.sendSuccessResponse(w, http.StatusCreated, productRes)
 }
 
 // @Summary Get product by ID
@@ -165,7 +162,7 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	var req CreateProductRequest
+	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -196,7 +193,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: true,
 		Data:    data,
 	})
@@ -205,7 +202,7 @@ func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode i
 func (h *ProductHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   message,
 	})
@@ -214,7 +211,7 @@ func (h *ProductHandler) sendErrorResponse(w http.ResponseWriter, statusCode int
 func (h *ProductHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(Response{
+	json.NewEncoder(w).Encode(dto.Response{
 		Success: false,
 		Error:   "Validation failed",
 		Errors:  errors,
