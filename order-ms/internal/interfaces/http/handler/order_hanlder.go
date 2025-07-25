@@ -104,6 +104,28 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	h.sendSuccessResponse(w, http.StatusCreated, order)
 }
 
+// @Summary Get order list
+// @Description Get orders as list
+// @Tags orders
+// @Produce json
+// @Success 200 {object} Response
+// @Failure 404 {object} Response
+// @Router /orders [get]
+func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit == 0 {
+		limit = 10
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	order, err := h.orderService.ListOrders(limit, offset)
+	if err != nil {
+		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
+		return
+	}
+	orders := h.toOrderListResponse(order)
+	h.sendSuccessResponse(w, http.StatusOK, orders)
+}
+
 // @Summary Get order by ID
 // @Description Get order details by ID
 // @Tags orders
@@ -227,6 +249,16 @@ func (h *OrderHandler) sendValidationErrorResponse(w http.ResponseWriter, errors
 		Error:   "Validation failed",
 		Errors:  errors,
 	})
+}
+
+func (h *OrderHandler) toOrderListResponse(orders []*domain.Order) []*dto.OrderResponse {
+	res := make([]*dto.OrderResponse, len(orders))
+
+	for i, o := range orders {
+		res[i] = h.toOrderResponse(o)
+	}
+	return res
+
 }
 
 func (h *OrderHandler) toOrderResponse(order *domain.Order) *dto.OrderResponse {

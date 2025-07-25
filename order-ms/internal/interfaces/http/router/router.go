@@ -1,4 +1,3 @@
-// services/order-ms/internal/interfaces/http/router/router.go
 package router
 
 import (
@@ -35,7 +34,7 @@ func NewRouter(orderHandler *handler.OrderHandler) *chi.Mux {
 				r.Use(sharedMiddleware.AuthMiddleware())
 
 				r.Post("/", orderHandler.CreateOrder)
-				// r.Get("/", orderHandler.ListOrders)
+				r.Get("/", orderHandler.ListOrders)
 				r.Get("/{id}", orderHandler.GetOrder)
 				r.Put("/{id}/status", orderHandler.UpdateOrderStatus)
 				r.Put("/{id}/cancel", orderHandler.CancelOrder)
