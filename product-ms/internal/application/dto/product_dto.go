@@ -45,8 +45,6 @@ type ProductSearchResponse struct {
 	Products []ProductResponse `json:"products"`
 	Query    string            `json:"query"`
 	Total    int               `json:"total"`
-	Page     int               `json:"page"`
-	PerPage  int               `json:"per_page"`
 }
 
 type StockUpdateRequest struct {

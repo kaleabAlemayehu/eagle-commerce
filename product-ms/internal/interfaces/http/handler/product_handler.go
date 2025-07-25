@@ -54,19 +54,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	productRes := dto.ProductResponse{
-		ID:          product.ID.String(),
-		Name:        product.Name,
-		Description: product.Description,
-		Price:       product.Price,
-		Stock:       product.Stock,
-		Category:    product.Category,
-		Images:      product.Images,
-		Active:      product.Active,
-		CreatedAt:   product.CreatedAt,
-		UpdatedAt:   product.UpdatedAt,
-	}
-
+	productRes := h.toProductResponse(product)
 	h.sendSuccessResponse(w, http.StatusCreated, productRes)
 }
 
@@ -75,8 +63,8 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 // @Tags products
 // @Produce json
 // @Param id path string true "Product ID"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
 // @Router /products/{id} [get]
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -87,7 +75,8 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, product)
+	productRes := h.toProductResponse(product)
+	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
 
 // @Summary List products
@@ -97,7 +86,7 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
 // @Param category query string false "Category filter"
-// @Success 200 {object} Response
+// @Success 200 {object} dto.Response
 // @Router /products [get]
 func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -113,8 +102,13 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	productsList := h.toProductResponseList(products)
+	productsRes := dto.ProductListResponse{
+		Products: productsList,
+		Total:    len(productsList),
+	}
 
-	h.sendSuccessResponse(w, http.StatusOK, products)
+	h.sendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
 // @Summary Search products
@@ -146,7 +140,14 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, products)
+	productList := h.toProductResponseList(products)
+	productsRes := dto.ProductSearchResponse{
+		Products: productList,
+		Query:    query,
+		Total:    len(productList),
+	}
+
+	h.sendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
 // @Summary Update product
@@ -187,7 +188,8 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedProduct, _ := h.productService.GetProduct(id)
-	h.sendSuccessResponse(w, http.StatusOK, updatedProduct)
+	productRes := h.toProductResponse(updatedProduct)
+	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
 
 func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
@@ -216,4 +218,27 @@ func (h *ProductHandler) sendValidationErrorResponse(w http.ResponseWriter, erro
 		Error:   "Validation failed",
 		Errors:  errors,
 	})
+}
+
+func (h *ProductHandler) toProductResponse(p *domain.Product) dto.ProductResponse {
+	return dto.ProductResponse{
+		ID:          p.ID.String(), // Convert ObjectID to string
+		Name:        p.Name,
+		Description: p.Description,
+		Price:       p.Price,
+		Stock:       p.Stock,
+		Category:    p.Category,
+		Images:      p.Images,
+		Active:      p.Active,
+		CreatedAt:   p.CreatedAt,
+		UpdatedAt:   p.UpdatedAt,
+	}
+}
+
+func (h *ProductHandler) toProductResponseList(products []*domain.Product) []dto.ProductResponse {
+	res := make([]dto.ProductResponse, len(products))
+	for i, p := range products {
+		res[i] = h.toProductResponse(p)
+	}
+	return res
 }
