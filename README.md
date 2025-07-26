@@ -32,7 +32,7 @@ eagle-ecommerce/
 ├── order-ms/       # Order processing service
 └── payment-ms/     # Payment processing service
 ├── api-gateway/        # API Gateway service
-├── docker-compose.yml  # Development environment setup
+├── compose.yml  # Development environment setup
 ├── Makefile           # Build and deployment commands
 └── go.work           # Go workspace configuration
 ```
