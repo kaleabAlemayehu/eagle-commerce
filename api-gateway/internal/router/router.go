@@ -1,9 +1,11 @@
 package router
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"net/http"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/api-gateway/internal/handler"
 	gatewayMiddleware "github.com/kaleabAlemayehu/eagle-commerce/api-gateway/internal/middleware"
@@ -17,7 +19,12 @@ func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(gatewayMiddleware.CORS())
-	r.Use(gatewayMiddleware.RateLimit())
+
+	r.Use(gatewayMiddleware.NewRateLimit(gatewayMiddleware.RateLimiterConfig{
+		RequestsPerMinute: 100,
+		Burst:             10,
+		CleanupInterval:   5 * time.Minute,
+	}))
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
