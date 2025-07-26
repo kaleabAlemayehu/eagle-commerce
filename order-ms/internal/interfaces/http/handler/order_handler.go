@@ -27,8 +27,8 @@ func NewOrderHandler(orderService domain.OrderService) *OrderHandler {
 // @Accept json
 // @Produce json
 // @Param order body dto.CreateOrderRequest true "Order data"
-// @Success 201 {object} Response
-// @Failure 400 {object} Response
+// @Success 201 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /orders [post]
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateOrderRequest
@@ -77,8 +77,8 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 // @Description Get orders as list
 // @Tags orders
 // @Produce json
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
 // @Router /orders [get]
 func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -100,8 +100,8 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 // @Tags orders
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} Response
-// @Failure 404 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 404 {object} dto.Response
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -123,7 +123,7 @@ func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 // @Param user_id path string true "User ID"
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
-// @Success 200 {object} Response
+// @Success 200 {object} dto.Response
 // @Router /orders/user/{user_id} [get]
 func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "user_id")
@@ -152,8 +152,8 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Order ID"
 // @Param status body dto.UpdateOrderStatusRequest true "Status update"
-// @Success 200 {object} Response
-// @Failure 400 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /orders/{id}/status [put]
 func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -180,8 +180,8 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 // @Tags orders
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} Response
-// @Failure 400 {object} Response
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /orders/{id}/cancel [put]
 func (h *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

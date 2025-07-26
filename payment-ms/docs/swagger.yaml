@@ -52,7 +52,7 @@ definitions:
       reason:
         type: string
     type: object
-  handler.Response:
+  dto.Response:
     properties:
       data: {}
       error:
@@ -84,7 +84,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: List payments
       tags:
       - payments
@@ -105,11 +105,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Process a payment
       tags:
       - payments
@@ -128,11 +128,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get payment by ID
       tags:
       - payments
@@ -158,11 +158,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Refund payment
       tags:
       - payments
@@ -181,11 +181,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get payment by order ID
       tags:
       - payments

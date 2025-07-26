@@ -16,6 +16,30 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/orders": {
+            "get": {
+                "description": "Get orders as list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Get order list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a new order with items and address",
                 "consumes": [
@@ -35,7 +59,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.CreateOrderRequest"
+                            "$ref": "#/definitions/dto.CreateOrderRequest"
                         }
                     }
                 ],
@@ -43,13 +67,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     }
                 }
@@ -92,7 +116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     }
                 }
@@ -121,13 +145,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     }
                 }
@@ -156,13 +180,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     }
                 }
@@ -195,7 +219,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpdateOrderStatusRequest"
+                            "$ref": "#/definitions/dto.UpdateOrderStatusRequest"
                         }
                     }
                 ],
@@ -203,13 +227,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/handler.Response"
+                            "$ref": "#/definitions/dto.Response"
                         }
                     }
                 }
@@ -217,7 +241,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.AddressRequest": {
+        "dto.AddressRequest": {
             "type": "object",
             "required": [
                 "city",
@@ -244,7 +268,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.CreateOrderItemRequest": {
+        "dto.CreateOrderItemRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -265,7 +289,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.CreateOrderRequest": {
+        "dto.CreateOrderRequest": {
             "type": "object",
             "required": [
                 "address",
@@ -274,12 +298,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "address": {
-                    "$ref": "#/definitions/handler.AddressRequest"
+                    "$ref": "#/definitions/dto.AddressRequest"
                 },
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handler.CreateOrderItemRequest"
+                        "$ref": "#/definitions/dto.CreateOrderItemRequest"
                     }
                 },
                 "user_id": {
@@ -287,7 +311,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.Response": {
+        "dto.Response": {
             "type": "object",
             "properties": {
                 "data": {},
@@ -300,14 +324,21 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.UpdateOrderStatusRequest": {
+        "dto.UpdateOrderStatusRequest": {
             "type": "object",
             "required": [
                 "status"
             ],
             "properties": {
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "confirmed",
+                        "shipped",
+                        "delivered",
+                        "cancelled"
+                    ]
                 }
             }
         }
@@ -324,6 +355,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "This is an order service API for eCommerce application",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

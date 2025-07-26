@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  handler.CreateProductRequest:
+  dto.CreateProductRequest:
     properties:
       category:
         type: string
@@ -22,7 +22,7 @@ definitions:
     - name
     - price
     type: object
-  handler.Response:
+  dto.Response:
     properties:
       data: {}
       error:
@@ -30,6 +30,32 @@ definitions:
       errors: {}
       success:
         type: boolean
+    type: object
+  dto.StockCheckRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_id
+    type: object
+  dto.StockUpdateRequest:
+    properties:
+      operation:
+        enum:
+        - add
+        - subtract
+        - set
+        type: string
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - operation
+    - product_id
+    - quantity
     type: object
 host: localhost:8082
 info:
@@ -62,7 +88,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: List products
       tags:
       - products
@@ -76,22 +102,44 @@ paths:
         name: product
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateProductRequest'
+          $ref: '#/definitions/dto.CreateProductRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Create a new product
       tags:
       - products
   /products/{id}:
+    delete:
+      description: Delete product details by ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Delete product by ID
+      tags:
+      - products
     get:
       description: Get product details by ID
       parameters:
@@ -106,11 +154,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get product by ID
       tags:
       - products
@@ -129,19 +177,79 @@ paths:
         name: product
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateProductRequest'
+          $ref: '#/definitions/dto.CreateProductRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Update product
+      tags:
+      - products
+  /products/check-stock:
+    post:
+      consumes:
+      - application/json
+      description: Check the stock of product
+      parameters:
+      - description: CheckStock data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.StockCheckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Check stoke of a new product
+      tags:
+      - products
+  /products/reserve-stock:
+    post:
+      consumes:
+      - application/json
+      description: Check the stock of product
+      parameters:
+      - description: CheckStock data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.StockUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Check stoke of a new product
       tags:
       - products
   /products/search:
@@ -169,7 +277,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Search products
       tags:
       - products

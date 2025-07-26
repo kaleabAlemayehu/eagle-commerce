@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  handler.CreateUserRequest:
+  dto.CreateUserRequest:
     properties:
       email:
         type: string
@@ -17,7 +17,7 @@ definitions:
     - last_name
     - password
     type: object
-  handler.Response:
+  dto.Response:
     properties:
       data: {}
       error:
@@ -53,7 +53,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: List users
       tags:
       - users
@@ -67,22 +67,44 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateUserRequest'
+          $ref: '#/definitions/dto.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Create a new user
       tags:
       - users
   /users/{id}:
+    delete:
+      description: Delete user details by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Delete user by ID
+      tags:
+      - users
     get:
       description: Get user details by ID
       parameters:
@@ -97,12 +119,59 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get user by ID
+      tags:
+      - users
+    put:
+      description: Update user details by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Put user by ID
+      tags:
+      - users
+  /users/login:
+    post:
+      description: Login user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Login user
       tags:
       - users
 swagger: "2.0"

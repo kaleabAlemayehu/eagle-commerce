@@ -118,7 +118,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 // @Param q query string true "Search query"
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
-// @Success 200 {object} Response
+// @Success 200 {object} dto.Response
 // @Router /products/search [get]
 func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
@@ -156,9 +156,9 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 // @Accept json
 // @Produce json
 // @Param id path string true "Product ID"
-// @Param product body CreateProductRequest true "Product data"
-// @Success 200 {object} Response
-// @Failure 400 {object} Response
+// @Param product body dto.CreateProductRequest true "Product data"
+// @Success 200 {object} dto.Response
+// @Failure 400 {object} dto.Response
 // @Router /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
@@ -216,7 +216,7 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 // @Tags products
 // @Accept json
 // @Produce json
-// @Param product body CheckStockRequest true "CheckStock data"
+// @Param product body dto.StockCheckRequest true "CheckStock data"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
 // @Failure 404 {object} dto.Response
@@ -246,7 +246,7 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 // @Tags products
 // @Accept json
 // @Produce json
-// @Param product body CheckStockRequest true "CheckStock data"
+// @Param product body dto.StockUpdateRequest true "CheckStock data"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
 // @Failure 404 {object} dto.Response

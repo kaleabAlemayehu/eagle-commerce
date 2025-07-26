@@ -14,8 +14,7 @@ type PaymentGateway interface {
 	RefundPayment(transactionID string, amount float64) error
 }
 
-// TODO: replace this with chapa payment integration
-
+// TODO: replace this with chapa payment integration but for now
 // MockPaymentGateway simulates a payment gateway
 type MockPaymentGateway struct{}
 

@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  handler.AddressRequest:
+  dto.AddressRequest:
     properties:
       city:
         type: string
@@ -19,7 +19,7 @@ definitions:
     - street
     - zip_code
     type: object
-  handler.CreateOrderItemRequest:
+  dto.CreateOrderItemRequest:
     properties:
       name:
         type: string
@@ -33,13 +33,13 @@ definitions:
     - name
     - product_id
     type: object
-  handler.CreateOrderRequest:
+  dto.CreateOrderRequest:
     properties:
       address:
-        $ref: '#/definitions/handler.AddressRequest'
+        $ref: '#/definitions/dto.AddressRequest'
       items:
         items:
-          $ref: '#/definitions/handler.CreateOrderItemRequest'
+          $ref: '#/definitions/dto.CreateOrderItemRequest'
         type: array
       user_id:
         type: string
@@ -48,7 +48,7 @@ definitions:
     - items
     - user_id
     type: object
-  handler.Response:
+  dto.Response:
     properties:
       data: {}
       error:
@@ -57,9 +57,15 @@ definitions:
       success:
         type: boolean
     type: object
-  handler.UpdateOrderStatusRequest:
+  dto.UpdateOrderStatusRequest:
     properties:
       status:
+        enum:
+        - pending
+        - confirmed
+        - shipped
+        - delivered
+        - cancelled
         type: string
     required:
     - status
@@ -72,6 +78,22 @@ info:
   version: "1.0"
 paths:
   /orders:
+    get:
+      description: Get orders as list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.Response'
+      summary: Get order list
+      tags:
+      - orders
     post:
       consumes:
       - application/json
@@ -82,18 +104,18 @@ paths:
         name: order
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateOrderRequest'
+          $ref: '#/definitions/dto.CreateOrderRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Create a new order
       tags:
       - orders
@@ -112,11 +134,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get order by ID
       tags:
       - orders
@@ -135,11 +157,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Cancel order
       tags:
       - orders
@@ -159,18 +181,18 @@ paths:
         name: status
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateOrderStatusRequest'
+          $ref: '#/definitions/dto.UpdateOrderStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Update order status
       tags:
       - orders
@@ -199,7 +221,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.Response'
+            $ref: '#/definitions/dto.Response'
       summary: Get user orders
       tags:
       - orders
