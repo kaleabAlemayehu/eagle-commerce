@@ -38,11 +38,6 @@ docker-down:
 	@echo "Stopping all containers..."
 	@docker compose down
 
-# Run tests
-test:
-	@echo "Running tests..."
-	@go test ./...
-
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."

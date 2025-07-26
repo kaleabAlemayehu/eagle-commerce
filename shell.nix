@@ -7,6 +7,7 @@ pkgs.mkShell {
     pkgs.gcc
     pkgs.glibc
     pkgs.pkg-config
+    pkgs.docker
   ];
 }
 
