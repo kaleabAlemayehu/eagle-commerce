@@ -27,12 +27,11 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 	// Routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/users", func(r chi.Router) {
-			r.Route("/users", func(r chi.Router) {
-				r.Post("/login", userHandler.LoginUser)
-			})
-			r.Route("/users", func(r chi.Router) {
+			r.Post("/login", userHandler.LoginUser)
+			r.Post("/", userHandler.CreateUser)
+			// Protected routes (with auth)
+			r.Group(func(r chi.Router) {
 				r.Use(middleware.AuthMiddleware())
-				r.Post("/", userHandler.CreateUser)
 				r.Get("/", userHandler.ListUsers)
 				r.Get("/{id}", userHandler.GetUser)
 				r.Put("/{id}", userHandler.UpdateUser)
