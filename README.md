@@ -88,7 +88,6 @@ docker-compose up --build
 
 Each service provides Swagger documentation:
 
-- **API Gateway**: http://localhost:8080/swagger/
 - **User Service**: http://localhost:8081/swagger/
 - **Product Service**: http://localhost:8082/swagger/
 - **Order Service**: http://localhost:8083/swagger/
@@ -124,12 +123,21 @@ The platform uses NATS for asynchronous communication between services:
 ### Event Types
 - `user.created` - Published when a user registers
 - `user.updated` - Published when user profile is updated
+- `user.deleted` - Published when user profile is deleted
 - `product.created` - Published when a product is added
+- `product.stock.updated`- Published when a product stock updated
+- `stock.check.response` - Published as response to a product stock check
 - `product.updated` - Published when product details change
 - `order.created` - Published when an order is placed
+- `order.cancelled` - Published when an order is cancelled
 - `order.status.changed` - Published when order status updates
+- `refund.requested`- Published when payment refuned is requested
+- `stock.check` - Published when a product stock get checked when ordering
+- `stock.reserve` - Published when a product stock get reserved
 - `payment.processed` - Published when payment is completed
 - `payment.failed` - Published when payment fails
+- `payment.refunded` - Published when payment is refunded
+
 
 ## 📦 Available Make Commands
 
@@ -163,7 +171,6 @@ The platform uses JWT-based authentication:
 1. Users authenticate through the User Service
 2. JWT tokens are validated by the API Gateway
 3. Service-to-service communication uses internal authentication
-4. Role-based access control (RBAC) for different user types
 
 ## 📊 Monitoring & Observability
 
