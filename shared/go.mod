@@ -3,6 +3,7 @@ module github.com/kaleabAlemayehu/eagle-commerce/shared
 go 1.24.3
 
 require (
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/golang-jwt/jwt/v5 v5.2.3

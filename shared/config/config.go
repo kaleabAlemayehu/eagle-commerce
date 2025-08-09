@@ -1,62 +1,50 @@
 package config
 
 import (
-	"os"
+	"log"
+
+	"github.com/caarlos0/env/v11"
 )
 
+// Config holds all application configuration
 type Config struct {
-	MongoDB     MongoConfig
-	NATS        NATSConfig
-	Server      ServerConfig
-	Service     ServiceConfig
-	JWTSecret   string
-	Environment string
+	MongoDB        MongoConfig   `envPrefix:"MONGODB_"`
+	NATS           NATSConfig    `envPrefix:"NATS_"`
+	Server         ServerConfig  `envPrefix:"SERVER_"`
+	Service        ServiceConfig `envPrefix:"SERVICE_"`
+	JWTSecret      string        `env:"JWT_SECRET" envDefault:"JxmnOYhSfqw-g9IkS489eaqZw9uVCzK5H912T9YezJ5MWCHPj4LHo4xOEQixZap38LcpBMuYNUBbgBAH0rTIZQ"`
+	Environment    string        `env:"ENVIRONMENT" envDefault:"development"`
+	AllowedOrigins []string      `env:"ALLOWED_ORIGINS" envDefault:"*" envSeparator:","`
 }
 
+// MongoConfig holds MongoDB config values
 type MongoConfig struct {
-	URI      string
-	Database string
+	URI      string `env:"URI" envDefault:"mongodb://admin:password@localhost:27017"`
+	Database string `env:"DATABASE" envDefault:"ecommerce"`
 }
 
+// NATSConfig holds NATS connection settings
 type NATSConfig struct {
-	URL string
+	URL string `env:"URL" envDefault:"nats://localhost:4222"`
 }
 
+// ServerConfig holds HTTP server configuration
 type ServerConfig struct {
-	Port string
-	Host string
+	Port string `env:"PORT" envDefault:"8080"`
+	Host string `env:"HOST" envDefault:"localhost"`
 }
 
+// ServiceConfig holds service metadata
 type ServiceConfig struct {
-	Name    string
-	Version string
+	Name    string `env:"NAME" envDefault:"ecommerce-service"`
+	Version string `env:"VERSION" envDefault:"1.0.0"`
 }
 
+// Load reads environment variables into Config
 func Load() *Config {
-	return &Config{
-		MongoDB: MongoConfig{
-			URI:      getEnv("MONGODB_URI", "mongodb://admin:password@localhost:27017"),
-			Database: getEnv("MONGODB_DATABASE", "ecommerce"),
-		},
-		NATS: NATSConfig{
-			URL: getEnv("NATS_URL", "nats://localhost:4222"),
-		},
-		Server: ServerConfig{
-			Port: getEnv("SERVER_PORT", "8080"),
-			Host: getEnv("SERVER_HOST", "localhost"),
-		},
-		Service: ServiceConfig{
-			Name:    getEnv("SERVICE_NAME", "ecommerce-service"),
-			Version: getEnv("SERVICE_VERSION", "1.0.0"),
-		},
-		JWTSecret:   getEnv("JWT_SECRET", "JxmnOYhSfqw-g9IkS489eaqZw9uVCzK5H912T9YezJ5MWCHPj4LHo4xOEQixZap38LcpBMuYNUBbgBAH0rTIZQ"),
-		Environment: getEnv("ENVIRONMENT", "development"),
+	var cfg Config
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Failed to parse environment variables: %v", err)
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
+	return &cfg
 }
