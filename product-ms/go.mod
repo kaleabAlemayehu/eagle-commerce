@@ -6,11 +6,13 @@ require (
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/kaleabAlemayehu/eagle-commerce/shared v0.0.0
 	github.com/swaggo/http-swagger v1.3.4
+	github.com/swaggo/swag v1.8.1
 	go.mongodb.org/mongo-driver v1.17.4
 )
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/caarlos0/env/v11 v11.3.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
@@ -29,7 +31,6 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
-	github.com/swaggo/swag v1.8.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
