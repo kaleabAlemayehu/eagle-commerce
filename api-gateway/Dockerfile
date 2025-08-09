@@ -18,7 +18,14 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o api-gateway ./cmd
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
-WORKDIR /root/
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# 2. Switch to the new user
+USER appuser
+
+# 3. Set the working directory in the user's home
+WORKDIR /home/appuser/
 
 COPY --from=builder /app/api-gateway/api-gateway .
 
