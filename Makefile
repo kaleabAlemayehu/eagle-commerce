@@ -1,7 +1,12 @@
 # Makefile
-.PHONY: build run test clean docker-up docker-down swagger
+.PHONY: build run test clean docker-up docker-down swagger help deps fmt lint
+	# adding help that goes through all targets
+help:
+	@echo "Available commands:"
+	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':'
 
 # Build all services
+## build: Build all service 
 build:
 	@echo "Building all services..."
 	@cd user-ms && go build -o bin/user-service cmd/main.go
