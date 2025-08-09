@@ -34,7 +34,7 @@ func NewUserHandler(userService domain.UserService) *UserHandler {
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -47,10 +47,10 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.userService.CreateUser(r.Context(), user); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
-			h.sendValidationErrorResponse(w, validationErrors)
+			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
-	h.sendSuccessResponse(w, http.StatusCreated, userRes)
+	utils.SendSuccessResponse(w, http.StatusCreated, userRes)
 }
 
 // @Summary Get user by ID
@@ -85,7 +85,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.GetUser(r.Context(), id)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -105,7 +105,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, userRes)
+	utils.SendSuccessResponse(w, http.StatusOK, userRes)
 }
 
 // @Summary List users
@@ -126,11 +126,11 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := h.userService.ListUsers(r.Context(), limit, offset)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, users)
+	utils.SendSuccessResponse(w, http.StatusOK, users)
 }
 
 // @Summary Put user by ID
@@ -146,7 +146,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var req dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 	user := &domain.User{
@@ -163,7 +163,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.userService.UpdateUser(r.Context(), id, user); err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -183,7 +183,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, userRes)
+	utils.SendSuccessResponse(w, http.StatusOK, userRes)
 }
 
 // @Summary Delete user by ID
@@ -197,10 +197,10 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := h.userService.DeleteUser(r.Context(), id); err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
-	h.sendSuccessResponse(w, http.StatusOK, "User Successfully Deleted")
+	utils.SendSuccessResponse(w, http.StatusOK, "User Successfully Deleted")
 }
 
 // @Summary Login user
@@ -214,12 +214,12 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 	user, token, err := h.userService.AuthenticateUser(r.Context(), req.Email, req.Password)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusUnauthorized, "Unauthorized user")
+		utils.SendErrorResponse(w, http.StatusUnauthorized, "Unauthorized user")
 		return
 	}
 
@@ -241,33 +241,5 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		},
 		Token: token,
 	}
-	h.sendSuccessResponse(w, http.StatusOK, loginRes)
-}
-
-func (h *UserHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: true,
-		Data:    data,
-	})
-}
-
-func (h *UserHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   message,
-	})
-}
-
-func (h *UserHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   "Validation failed",
-		Errors:  errors,
-	})
+	utils.SendSuccessResponse(w, http.StatusOK, loginRes)
 }
