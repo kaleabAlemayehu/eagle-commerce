@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,6 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
+)
+
+var (
+	ErrorUserNotFound = errors.New("user not found")
 )
 
 type MongoUserRepository struct {
@@ -40,7 +45,10 @@ func (r *MongoUserRepository) GetByID(ctx context.Context, id string) (*domain.U
 	var user domain.User
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, err
+		}
+		return nil, ErrorUserNotFound
 	}
 
 	return &user, nil
@@ -50,7 +58,10 @@ func (r *MongoUserRepository) GetByEmail(ctx context.Context, email string) (*do
 	var user domain.User
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
-		return nil, err
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, err
+		}
+		return nil, ErrorUserNotFound
 	}
 
 	return &user, nil

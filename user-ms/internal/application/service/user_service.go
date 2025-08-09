@@ -7,6 +7,7 @@ import (
 	argon "github.com/alexedwards/argon2id"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/messaging"
+	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/repository"
 	sharedMiddlware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
@@ -34,7 +35,9 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, user *domain.User) err
 	// Check if user already exists
 	existingUser, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
-		return err
+		if !errors.Is(err, repository.ErrorUserNotFound) {
+			return err
+		}
 	}
 	if existingUser != nil {
 		return errors.New("user already exists")
