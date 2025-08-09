@@ -4,6 +4,7 @@ go 1.24.3
 
 require (
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/cors v1.2.2
 	github.com/kaleabAlemayehu/eagle-commerce/shared v0.0.0
 	github.com/swaggo/swag v1.16.5
 	golang.org/x/time v0.12.0
