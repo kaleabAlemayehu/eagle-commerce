@@ -24,6 +24,7 @@ func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
 		RequestsPerMinute: 100,
 		Burst:             10,
 		CleanupInterval:   5 * time.Minute,
+		Timeout:           15 * time.Minute,
 	}))
 
 	// Health check
@@ -39,7 +40,7 @@ func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("user"))
 		})
 
-		// Product service routes
+		// Product service routes (protected)
 		r.Route("/products", func(r chi.Router) {
 			r.Use(gatewayMiddleware.Auth())
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("product"))

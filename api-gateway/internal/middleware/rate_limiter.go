@@ -8,21 +8,27 @@ import (
 	"golang.org/x/time/rate"
 )
 
+type visitor struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 type RateLimiterConfig struct {
 	RequestsPerMinute int
 	Burst             int
 	CleanupInterval   time.Duration
+	Timeout           time.Duration
 }
 
 func NewRateLimit(config RateLimiterConfig) func(http.Handler) http.Handler {
 	limiter := &rateLimiter{
-		visitors: make(map[string]*rate.Limiter),
+		visitors: make(map[string]*visitor),
 		rate:     rate.Every(time.Minute / time.Duration(config.RequestsPerMinute)),
 		burst:    config.Burst,
 	}
 
 	// Start cleanup goroutine
-	go limiter.cleanup(config.CleanupInterval)
+	go limiter.cleanup(config.CleanupInterval, config.Timeout)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +45,7 @@ func NewRateLimit(config RateLimiterConfig) func(http.Handler) http.Handler {
 }
 
 type rateLimiter struct {
-	visitors map[string]*rate.Limiter
+	visitors map[string]*visitor
 	mu       sync.RWMutex
 	rate     rate.Limit
 	burst    int
@@ -47,23 +53,27 @@ type rateLimiter struct {
 
 func (rl *rateLimiter) allow(ip string) bool {
 	rl.mu.Lock()
-	if _, exists := rl.visitors[ip]; !exists {
-		rl.visitors[ip] = rate.NewLimiter(rl.rate, rl.burst)
+	defer rl.mu.Unlock()
+	v, exists := rl.visitors[ip]
+	if !exists {
+		limiter := rate.NewLimiter(rl.rate, rl.burst)
+		rl.visitors[ip] = &visitor{limiter: limiter, lastSeen: time.Now()}
+		return limiter.Allow()
 	}
-	visitor := rl.visitors[ip]
-	rl.mu.Unlock()
-
-	return visitor.Allow()
+	v.lastSeen = time.Now()
+	return v.limiter.Allow()
 }
 
-func (rl *rateLimiter) cleanup(interval time.Duration) {
+func (rl *rateLimiter) cleanup(interval, timeout time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		rl.mu.Lock()
-		if len(rl.visitors) > 1000 {
-			rl.visitors = make(map[string]*rate.Limiter)
+		for ip, v := range rl.visitors {
+			if time.Since(v.lastSeen) > timeout {
+				delete(rl.visitors, ip)
+			}
 		}
 		rl.mu.Unlock()
 	}
