@@ -45,9 +45,10 @@ func main() {
 	if err := messaging.NewOrderEventHandler(orderService, natsClient).StartListening(); err != nil {
 		log.Fatal("Failed to listen NATS events:", err)
 	}
+	mode := cfg.Environment
 
 	// Setup router
-	r := router.NewRouter(orderHandler)
+	r := router.NewRouter(orderHandler, mode)
 
 	// Start server
 	port := "8083"

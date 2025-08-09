@@ -5,11 +5,12 @@ import (
 )
 
 type Config struct {
-	MongoDB   MongoConfig
-	NATS      NATSConfig
-	Server    ServerConfig
-	Service   ServiceConfig
-	JWTSecret string
+	MongoDB     MongoConfig
+	NATS        NATSConfig
+	Server      ServerConfig
+	Service     ServiceConfig
+	JWTSecret   string
+	Environment string
 }
 
 type MongoConfig struct {
@@ -48,7 +49,8 @@ func Load() *Config {
 			Name:    getEnv("SERVICE_NAME", "ecommerce-service"),
 			Version: getEnv("SERVICE_VERSION", "1.0.0"),
 		},
-		JWTSecret: getEnv("JWT_SECRET", "JxmnOYhSfqw-g9IkS489eaqZw9uVCzK5H912T9YezJ5MWCHPj4LHo4xOEQixZap38LcpBMuYNUBbgBAH0rTIZQ"),
+		JWTSecret:   getEnv("JWT_SECRET", "JxmnOYhSfqw-g9IkS489eaqZw9uVCzK5H912T9YezJ5MWCHPj4LHo4xOEQixZap38LcpBMuYNUBbgBAH0rTIZQ"),
+		Environment: getEnv("ENVIRONMENT", "development"),
 	}
 }
 

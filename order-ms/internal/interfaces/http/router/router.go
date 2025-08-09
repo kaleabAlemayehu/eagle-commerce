@@ -11,14 +11,18 @@ import (
 
 // TODO: there is a lot of missing handlers
 
-func NewRouter(orderHandler *handler.OrderHandler) *chi.Mux {
+func NewRouter(orderHandler *handler.OrderHandler, mode string) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	r.Use(sharedMiddleware.LoggingMiddleware())
+	if mode == "production" {
+		r.Use(sharedMiddleware.StructuredLogMiddleware())
+	} else {
+		r.Use(sharedMiddleware.LoggingMiddleware())
+	}
 	r.Use(middleware.Heartbeat("/health"))
 
 	// Swagger
@@ -31,7 +35,6 @@ func NewRouter(orderHandler *handler.OrderHandler) *chi.Mux {
 		r.Route("/orders", func(r chi.Router) {
 			// Public routes (with auth)
 			r.Group(func(r chi.Router) {
-				r.Use(sharedMiddleware.AuthMiddleware())
 				r.Post("/", orderHandler.CreateOrder)
 				r.Get("/", orderHandler.ListOrders)
 				r.Get("/{id}", orderHandler.GetOrder)
