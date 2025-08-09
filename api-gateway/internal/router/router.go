@@ -12,14 +12,14 @@ import (
 	authMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(proxyHandler *handler.ProxyHandler, auth *authMiddleware.Auth) *chi.Mux {
+func NewRouter(proxyHandler *handler.ProxyHandler, auth *authMiddleware.Auth, allowedOrigins []string) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	r.Use(gatewayMiddleware.CORS())
+	r.Use(gatewayMiddleware.CORS(allowedOrigins))
 
 	r.Use(gatewayMiddleware.NewRateLimit(gatewayMiddleware.RateLimiterConfig{
 		RequestsPerMinute: 100,
