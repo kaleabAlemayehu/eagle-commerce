@@ -45,7 +45,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		LastName:  req.LastName,
 	}
 
-	if err := h.userService.CreateUser(user); err != nil {
+	if err := h.userService.CreateUser(r.Context(), user); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			h.sendValidationErrorResponse(w, validationErrors)
 			return
@@ -83,7 +83,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	user, err := h.userService.GetUser(id)
+	user, err := h.userService.GetUser(r.Context(), id)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
@@ -124,7 +124,7 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	users, err := h.userService.ListUsers(limit, offset)
+	users, err := h.userService.ListUsers(r.Context(), limit, offset)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -162,7 +162,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 
-	if err := h.userService.UpdateUser(id, user); err != nil {
+	if err := h.userService.UpdateUser(r.Context(), id, user); err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
@@ -196,7 +196,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 // @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := h.userService.DeleteUser(id); err != nil {
+	if err := h.userService.DeleteUser(r.Context(), id); err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
@@ -217,7 +217,7 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	user, token, err := h.userService.AuthenticateUser(req.Email, req.Password)
+	user, token, err := h.userService.AuthenticateUser(r.Context(), req.Email, req.Password)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusUnauthorized, "Unauthorized user")
 		return

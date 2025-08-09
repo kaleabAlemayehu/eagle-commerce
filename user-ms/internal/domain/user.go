@@ -1,8 +1,10 @@
 package domain
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
@@ -25,19 +27,19 @@ type Address struct {
 }
 
 type UserRepository interface {
-	Create(user *User) error
-	GetByID(id string) (*User, error)
-	GetByEmail(email string) (*User, error)
-	Update(id string, user *User) error
-	Delete(id string) error
-	List(limit, offset int) ([]*User, error)
+	Create(ctx context.Context, user *User) error
+	GetByID(ctx context.Context, id string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	Update(ctx context.Context, id string, user *User) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, limit, offset int) ([]*User, error)
 }
 
 type UserService interface {
-	CreateUser(user *User) error
-	GetUser(id string) (*User, error)
-	UpdateUser(id string, user *User) error
-	DeleteUser(id string) error
-	ListUsers(limit, offset int) ([]*User, error)
-	AuthenticateUser(email, password string) (*User, string, error)
+	CreateUser(ctx context.Context, user *User) error
+	GetUser(ctx context.Context, id string) (*User, error)
+	UpdateUser(ctx context.Context, id string, user *User) error
+	DeleteUser(ctx context.Context, id string) error
+	ListUsers(ctx context.Context, limit, offset int) ([]*User, error)
+	AuthenticateUser(ctx context.Context, email, password string) (*User, string, error)
 }

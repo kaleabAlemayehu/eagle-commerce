@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	argon "github.com/alexedwards/argon2id"
@@ -24,14 +25,17 @@ func NewUserService(repo domain.UserRepository, nats *messaging.UserEventPublish
 	}
 }
 
-func (s *UserServiceImpl) CreateUser(user *domain.User) error {
+func (s *UserServiceImpl) CreateUser(ctx context.Context, user *domain.User) error {
 	// Validate user data
 	if err := utils.ValidateStruct(user); err != nil {
 		return err
 	}
 
 	// Check if user already exists
-	existingUser, _ := s.repo.GetByEmail(user.Email)
+	existingUser, err := s.repo.GetByEmail(ctx, user.Email)
+	if err != nil {
+		return err
+	}
 	if existingUser != nil {
 		return errors.New("user already exists")
 	}
@@ -44,7 +48,7 @@ func (s *UserServiceImpl) CreateUser(user *domain.User) error {
 	user.Password = string(hashedPassword)
 
 	// Create user
-	if err := s.repo.Create(user); err != nil {
+	if err := s.repo.Create(ctx, user); err != nil {
 		return err
 	}
 
@@ -52,34 +56,34 @@ func (s *UserServiceImpl) CreateUser(user *domain.User) error {
 	return s.nats.PublishUserCreated(user)
 }
 
-func (s *UserServiceImpl) GetUser(id string) (*domain.User, error) {
-	return s.repo.GetByID(id)
+func (s *UserServiceImpl) GetUser(ctx context.Context, id string) (*domain.User, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
-func (s *UserServiceImpl) UpdateUser(id string, user *domain.User) error {
+func (s *UserServiceImpl) UpdateUser(ctx context.Context, id string, user *domain.User) error {
 	if err := utils.ValidateStruct(user); err != nil {
 		return err
 	}
 
-	if err := s.repo.Update(id, user); err != nil {
+	if err := s.repo.Update(ctx, id, user); err != nil {
 		return err
 	}
 	return s.nats.PublishUserUpdated(user)
 }
 
-func (s *UserServiceImpl) DeleteUser(id string) error {
-	if err := s.repo.Delete(id); err != nil {
+func (s *UserServiceImpl) DeleteUser(ctx context.Context, id string) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 	return s.nats.PublishUserDeleted(id)
 }
 
-func (s *UserServiceImpl) ListUsers(limit, offset int) ([]*domain.User, error) {
-	return s.repo.List(limit, offset)
+func (s *UserServiceImpl) ListUsers(ctx context.Context, limit, offset int) ([]*domain.User, error) {
+	return s.repo.List(ctx, limit, offset)
 }
 
-func (s *UserServiceImpl) AuthenticateUser(email, password string) (*domain.User, string, error) {
-	user, err := s.repo.GetByEmail(email)
+func (s *UserServiceImpl) AuthenticateUser(ctx context.Context, email, password string) (*domain.User, string, error) {
+	user, err := s.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, "", errors.New("invalid credentials")
 	}

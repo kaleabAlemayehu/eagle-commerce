@@ -22,23 +22,23 @@ func NewMongoUserRepository(db *mongo.Database) *MongoUserRepository {
 	}
 }
 
-func (r *MongoUserRepository) Create(user *domain.User) error {
+func (r *MongoUserRepository) Create(ctx context.Context, user *domain.User) error {
 	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
-	_, err := r.collection.InsertOne(context.Background(), user)
+	_, err := r.collection.InsertOne(ctx, user)
 	return err
 }
 
-func (r *MongoUserRepository) GetByID(id string) (*domain.User, error) {
+func (r *MongoUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var user domain.User
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +46,9 @@ func (r *MongoUserRepository) GetByID(id string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r *MongoUserRepository) GetByEmail(email string) (*domain.User, error) {
+func (r *MongoUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user domain.User
-	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
+	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r *MongoUserRepository) GetByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r *MongoUserRepository) Update(id string, user *domain.User) error {
+func (r *MongoUserRepository) Update(ctx context.Context, id string, user *domain.User) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -65,30 +65,30 @@ func (r *MongoUserRepository) Update(id string, user *domain.User) error {
 	user.UpdatedAt = time.Now()
 	update := bson.M{"$set": user}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
 
-func (r *MongoUserRepository) Delete(id string) error {
+func (r *MongoUserRepository) Delete(ctx context.Context, id string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.collection.DeleteOne(context.Background(), bson.M{"_id": objectID})
+	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": objectID})
 	return err
 }
 
-func (r *MongoUserRepository) List(limit, offset int) ([]*domain.User, error) {
+func (r *MongoUserRepository) List(ctx context.Context, limit, offset int) ([]*domain.User, error) {
 	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset))
-	cursor, err := r.collection.Find(context.Background(), bson.M{}, opts)
+	cursor, err := r.collection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var users []*domain.User
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		var user domain.User
 		if err := cursor.Decode(&user); err != nil {
 			return nil, err
