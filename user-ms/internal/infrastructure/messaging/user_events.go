@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
@@ -35,7 +36,7 @@ func (p *UserEventPublisher) PublishUserCreated(user *domain.User) error {
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("user.created", event)
+	return p.natsClient.Publish(models.UserCreatedEvent, event)
 }
 
 func (p *UserEventPublisher) PublishUserUpdated(user *domain.User) error {
@@ -53,13 +54,13 @@ func (p *UserEventPublisher) PublishUserUpdated(user *domain.User) error {
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("user.updated", event)
+	return p.natsClient.Publish(models.UserUpdatedEvent, event)
 }
 
 func (p *UserEventPublisher) PublishUserDeleted(userID string) error {
 	event := models.Event{
 		ID:     generateEventID(),
-		Type:   "user.deleted",
+		Type:   models.UserDeletedEvent,
 		Source: "user-service",
 		Data: map[string]interface{}{
 			"user_id":    userID,
@@ -68,7 +69,7 @@ func (p *UserEventPublisher) PublishUserDeleted(userID string) error {
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("user.deleted", event)
+	return p.natsClient.Publish(models.UserDeletedEvent, event)
 }
 
 type UserEventHandler struct {
@@ -83,12 +84,12 @@ func NewUserEventHandler(natsClient *messaging.NATSClient) *UserEventHandler {
 
 func (h *UserEventHandler) StartListening() error {
 	// Subscribe to user-related events from other services
-	_, err := h.natsClient.Subscribe("order.created", h.handleOrderCreated)
+	_, err := h.natsClient.Subscribe(models.OrderCreatedEvent, h.handleOrderCreated)
 	if err != nil {
 		return err
 	}
 
-	_, err = h.natsClient.Subscribe("payment.processed", h.handlePaymentProcessed)
+	_, err = h.natsClient.Subscribe(models.PaymentProcessedEvent, h.handlePaymentProcessed)
 	return err
 }
 
@@ -124,5 +125,5 @@ func (h *UserEventHandler) handlePaymentProcessed(data []byte) {
 }
 
 func generateEventID() string {
-	return time.Now().Format("20060102150405") + "-" + "user"
+	return uuid.NewString()
 }

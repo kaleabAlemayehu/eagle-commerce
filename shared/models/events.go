@@ -13,6 +13,7 @@ type Event struct {
 // Event types
 const (
 	UserCreatedEvent      = "user.created"
+	UserDeletedEvent      = "user.deleted"
 	UserUpdatedEvent      = "user.updated"
 	ProductCreatedEvent   = "product.created"
 	ProductUpdatedEvent   = "product.updated"

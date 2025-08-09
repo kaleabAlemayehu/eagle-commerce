@@ -5,6 +5,7 @@ go 1.24.3
 require (
 	github.com/alexedwards/argon2id v1.0.0
 	github.com/go-chi/chi/v5 v5.2.2
+	github.com/google/uuid v1.6.0
 	github.com/kaleabAlemayehu/eagle-commerce/shared v0.0.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.8.1
