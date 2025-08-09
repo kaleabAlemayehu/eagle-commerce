@@ -14,6 +14,7 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
 func main() {
@@ -40,7 +41,8 @@ func main() {
 		log.Fatal("Failed to listen events from NATS:", err)
 	}
 
-	r := router.NewRouter(paymentHandler)
+	auth := sharedMiddleware.NewAuth(cfg.JWTSecret)
+	r := router.NewRouter(paymentHandler, auth)
 	port := "8084"
 	log.Printf("Product service starting on port %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))

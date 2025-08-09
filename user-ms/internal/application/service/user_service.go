@@ -6,19 +6,21 @@ import (
 	argon "github.com/alexedwards/argon2id"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/infrastructure/messaging"
-	"github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
+	sharedMiddlware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
 type UserServiceImpl struct {
 	repo domain.UserRepository
 	nats *messaging.UserEventPublisher
+	auth *sharedMiddlware.Auth
 }
 
-func NewUserService(repo domain.UserRepository, nats *messaging.UserEventPublisher) domain.UserService {
+func NewUserService(repo domain.UserRepository, nats *messaging.UserEventPublisher, auth *sharedMiddlware.Auth) domain.UserService {
 	return &UserServiceImpl{
 		repo: repo,
 		nats: nats,
+		auth: auth,
 	}
 }
 
@@ -85,7 +87,7 @@ func (s *UserServiceImpl) AuthenticateUser(email, password string) (*domain.User
 	if err != nil || !match {
 		return nil, "", errors.New("invalid credentials")
 	}
-	token, err := middleware.GenerateJWT(user.ID.String(), user.Email)
+	token, err := s.auth.GenerateJWT(user.ID.String(), user.Email)
 	if err != nil {
 		return nil, "", errors.New("unable to generate JWT")
 	}

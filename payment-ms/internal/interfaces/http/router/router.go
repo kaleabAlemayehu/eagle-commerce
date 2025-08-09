@@ -9,7 +9,7 @@ import (
 	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(paymentHandler *handler.PaymentHandler) *chi.Mux {
+func NewRouter(paymentHandler *handler.PaymentHandler, auth *sharedMiddleware.Auth) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -29,8 +29,7 @@ func NewRouter(paymentHandler *handler.PaymentHandler) *chi.Mux {
 		r.Route("/payments", func(r chi.Router) {
 			// Protected routes
 			r.Group(func(r chi.Router) {
-				r.Use(sharedMiddleware.AuthMiddleware())
-
+				r.Use(auth.AuthMiddleware())
 				r.Post("/", paymentHandler.ProcessPayment)
 				r.Get("/", paymentHandler.ListPayments)
 				r.Get("/{id}", paymentHandler.GetPayment)

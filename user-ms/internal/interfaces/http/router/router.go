@@ -7,10 +7,10 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/handler"
-	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/interfaces/http/middleware"
+	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
+func NewRouter(userHandler *handler.UserHandler, auth *sharedMiddleware.Auth) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -31,7 +31,7 @@ func NewRouter(userHandler *handler.UserHandler) *chi.Mux {
 			r.Post("/", userHandler.CreateUser)
 			// Protected routes (with auth)
 			r.Group(func(r chi.Router) {
-				r.Use(middleware.AuthMiddleware())
+				r.Use(auth.AuthMiddleware())
 				r.Get("/", userHandler.ListUsers)
 				r.Get("/{id}", userHandler.GetUser)
 				r.Put("/{id}", userHandler.UpdateUser)

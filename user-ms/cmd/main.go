@@ -13,6 +13,7 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
 // @title User Service API
@@ -43,11 +44,12 @@ func main() {
 
 	// Initialize dependencies
 	userRepo := repository.NewMongoUserRepository(db.Database)
-	userService := service.NewUserService(userRepo, nats)
+	auth := sharedMiddleware.NewAuth(cfg.JWTSecret)
+	userService := service.NewUserService(userRepo, nats, auth)
 	userHandler := handler.NewUserHandler(userService)
 
 	// Setup router
-	r := router.NewRouter(userHandler)
+	r := router.NewRouter(userHandler, auth)
 
 	// Start server
 	port := "8081"
