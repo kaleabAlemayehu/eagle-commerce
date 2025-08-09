@@ -9,9 +9,10 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/api-gateway/internal/handler"
 	gatewayMiddleware "github.com/kaleabAlemayehu/eagle-commerce/api-gateway/internal/middleware"
+	authMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
+func NewRouter(proxyHandler *handler.ProxyHandler, auth *authMiddleware.Auth) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -42,19 +43,18 @@ func NewRouter(proxyHandler *handler.ProxyHandler) *chi.Mux {
 
 		// Product service routes (protected)
 		r.Route("/products", func(r chi.Router) {
-			r.Use(gatewayMiddleware.Auth())
+			r.Use(auth.AuthMiddleware())
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("product"))
 		})
 
 		// Order service routes (protected)
 		r.Route("/orders", func(r chi.Router) {
-			r.Use(gatewayMiddleware.Auth())
+			r.Use(auth.AuthMiddleware())
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("order"))
 		})
 
 		// Payment service routes (protected)
 		r.Route("/payments", func(r chi.Router) {
-			r.Use(gatewayMiddleware.Auth())
 			r.HandleFunc("/*", proxyHandler.ProxyRequest("payment"))
 		})
 	})

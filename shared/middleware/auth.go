@@ -11,9 +11,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var (
-	JWTSecret = []byte("your-secret-key") // In production, use environment variable
-)
+type Auth struct {
+	jwtSecret []byte
+}
+
+func NewAuth(secret string) *Auth {
+	return &Auth{
+		jwtSecret: []byte(secret),
+	}
+}
 
 type Claims struct {
 	UserID string `json:"user_id"`
@@ -25,7 +31,7 @@ type contextKey string
 
 const UserContextKey contextKey = "user"
 
-func GenerateJWT(userID, email string) (string, error) {
+func (a *Auth) GenerateJWT(userID, email string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
@@ -37,15 +43,15 @@ func GenerateJWT(userID, email string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JWTSecret)
+	return token.SignedString(a.jwtSecret)
 }
 
-func ValidateJWT(tokenString string) (*Claims, error) {
+func (a *Auth) ValidateJWT(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return JWTSecret, nil
+		return a.jwtSecret, nil
 	})
 
 	if err != nil {
@@ -59,7 +65,7 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-func AuthMiddleware() func(http.Handler) http.Handler {
+func (a *Auth) AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -74,7 +80,7 @@ func AuthMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			claims, err := ValidateJWT(tokenString)
+			claims, err := a.ValidateJWT(tokenString)
 			if err != nil {
 				sendUnauthorized(w, "Invalid token")
 				return
