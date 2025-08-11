@@ -1,8 +1,10 @@
 package domain
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Product struct {
@@ -19,22 +21,23 @@ type Product struct {
 }
 
 type ProductRepository interface {
-	Create(product *Product) error
-	GetByID(id string) (*Product, error)
-	Update(id string, product *Product) error
-	Delete(id string) error
-	List(limit, offset int, category string) ([]*Product, error)
-	Search(query string, limit, offset int) ([]*Product, error)
-	UpdateStock(id string, quantity int) error
+	Create(ctx context.Context, product *Product) error
+	GetByID(ctx context.Context, id string) (*Product, error)
+	Update(ctx context.Context, id string, product *Product) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, limit, offset int, category string) ([]*Product, error)
+	Search(ctx context.Context, query string, limit, offset int) ([]*Product, error)
+	UpdateStock(ctx context.Context, id string, quantity int) error
 }
 
 type ProductService interface {
-	CreateProduct(product *Product) error
-	GetProduct(id string) (*Product, error)
-	UpdateProduct(id string, product *Product) error
-	DeleteProduct(id string) error
-	ListProducts(limit, offset int, category string) ([]*Product, error)
-	SearchProducts(query string, limit, offset int) ([]*Product, error)
-	CheckStock(id string, quantity int) (bool, int, error)
-	ReserveStock(id string, quantity int) error
+	CreateProduct(ctx context.Context, product *Product) error
+	GetProduct(ctx context.Context, id string) (*Product, error)
+	UpdateProduct(ctx context.Context, id string, product *Product) error
+	DeleteProduct(ctx context.Context, id string) error
+	ListProducts(ctx context.Context, limit, offset int, category string) ([]*Product, error)
+	SearchProducts(ctx context.Context, query string, limit, offset int) ([]*Product, error)
+	CheckStock(ctx context.Context, id string, quantity int) (bool, int, error)
+	ReserveStock(ctx context.Context, id string, quantity int) error
+	RestoreStock(ctx context.Context, id string, quantity int) error
 }
