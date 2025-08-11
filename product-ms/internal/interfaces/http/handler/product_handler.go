@@ -46,7 +46,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		Images:      req.Images,
 	}
 
-	if err := h.productService.CreateProduct(product); err != nil {
+	if err := h.productService.CreateProduct(r.Context(), product); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			h.sendValidationErrorResponse(w, validationErrors)
 			return
@@ -69,7 +69,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	product, err := h.productService.GetProduct(id)
+	product, err := h.productService.GetProduct(r.Context(), id)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
@@ -97,7 +97,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	category := r.URL.Query().Get("category")
 
-	products, err := h.productService.ListProducts(limit, offset, category)
+	products, err := h.productService.ListProducts(r.Context(), limit, offset, category)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -134,7 +134,7 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	products, err := h.productService.SearchProducts(query, limit, offset)
+	products, err := h.productService.SearchProducts(r.Context(), query, limit, offset)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -178,7 +178,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		Images:      req.Images,
 	}
 
-	if err := h.productService.UpdateProduct(id, product); err != nil {
+	if err := h.productService.UpdateProduct(r.Context(), id, product); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			h.sendValidationErrorResponse(w, validationErrors)
 			return
@@ -187,7 +187,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedProduct, _ := h.productService.GetProduct(id)
+	updatedProduct, _ := h.productService.GetProduct(r.Context(), id)
 	productRes := h.toProductResponse(updatedProduct)
 	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
@@ -203,7 +203,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	if err := h.productService.DeleteProduct(id); err != nil {
+	if err := h.productService.DeleteProduct(r.Context(), id); err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
@@ -227,7 +227,7 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	ok, n, err := h.productService.CheckStock(req.ProductID, req.Quantity)
+	ok, n, err := h.productService.CheckStock(r.Context(), req.ProductID, req.Quantity)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
@@ -261,7 +261,7 @@ func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 		h.sendValidationErrorResponse(w, err)
 		return
 	}
-	if err := h.productService.ReserveStock(req.ProductID, req.Quantity); err != nil {
+	if err := h.productService.ReserveStock(r.Context(), req.ProductID, req.Quantity); err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}

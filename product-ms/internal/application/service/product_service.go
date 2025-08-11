@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
@@ -20,12 +21,12 @@ func NewProductService(repo domain.ProductRepository, nats *messaging.ProductEve
 	}
 }
 
-func (s *ProductServiceImpl) CreateProduct(product *domain.Product) error {
+func (s *ProductServiceImpl) CreateProduct(ctx context.Context, product *domain.Product) error {
 	if err := utils.ValidateStruct(product); err != nil {
 		return err
 	}
 
-	if err := s.repo.Create(product); err != nil {
+	if err := s.repo.Create(ctx, product); err != nil {
 		return err
 	}
 
@@ -33,36 +34,36 @@ func (s *ProductServiceImpl) CreateProduct(product *domain.Product) error {
 	return s.nats.PublishProductCreated(product)
 }
 
-func (s *ProductServiceImpl) GetProduct(id string) (*domain.Product, error) {
-	return s.repo.GetByID(id)
+func (s *ProductServiceImpl) GetProduct(ctx context.Context, id string) (*domain.Product, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
-func (s *ProductServiceImpl) UpdateProduct(id string, product *domain.Product) error {
+func (s *ProductServiceImpl) UpdateProduct(ctx context.Context, id string, product *domain.Product) error {
 	if err := utils.ValidateStruct(product); err != nil {
 		return err
 	}
 
-	if err := s.repo.Update(id, product); err != nil {
+	if err := s.repo.Update(ctx, id, product); err != nil {
 		return err
 	}
 
 	return s.nats.PublishProductUpdated(product)
 }
 
-func (s *ProductServiceImpl) DeleteProduct(id string) error {
-	return s.repo.Delete(id)
+func (s *ProductServiceImpl) DeleteProduct(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
 }
 
-func (s *ProductServiceImpl) ListProducts(limit, offset int, category string) ([]*domain.Product, error) {
-	return s.repo.List(limit, offset, category)
+func (s *ProductServiceImpl) ListProducts(ctx context.Context, limit, offset int, category string) ([]*domain.Product, error) {
+	return s.repo.List(ctx, limit, offset, category)
 }
 
-func (s *ProductServiceImpl) SearchProducts(query string, limit, offset int) ([]*domain.Product, error) {
-	return s.repo.Search(query, limit, offset)
+func (s *ProductServiceImpl) SearchProducts(ctx context.Context, query string, limit, offset int) ([]*domain.Product, error) {
+	return s.repo.Search(ctx, query, limit, offset)
 }
 
-func (s *ProductServiceImpl) CheckStock(id string, quantity int) (bool, int, error) {
-	product, err := s.repo.GetByID(id)
+func (s *ProductServiceImpl) CheckStock(ctx context.Context, id string, quantity int) (bool, int, error) {
+	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return false, -1, err
 	}

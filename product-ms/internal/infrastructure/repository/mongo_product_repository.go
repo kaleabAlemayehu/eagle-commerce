@@ -22,24 +22,24 @@ func NewMongoProductRepository(db *mongo.Database) *MongoProductRepository {
 	}
 }
 
-func (r *MongoProductRepository) Create(product *domain.Product) error {
+func (r *MongoProductRepository) Create(ctx context.Context, product *domain.Product) error {
 	product.ID = primitive.NewObjectID()
 	product.Active = true
 	product.CreatedAt = time.Now()
 	product.UpdatedAt = time.Now()
 
-	_, err := r.collection.InsertOne(context.Background(), product)
+	_, err := r.collection.InsertOne(ctx, product)
 	return err
 }
 
-func (r *MongoProductRepository) GetByID(id string) (*domain.Product, error) {
+func (r *MongoProductRepository) GetByID(ctx context.Context, id string) (*domain.Product, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var product domain.Product
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&product)
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&product)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *MongoProductRepository) GetByID(id string) (*domain.Product, error) {
 	return &product, nil
 }
 
-func (r *MongoProductRepository) Update(id string, product *domain.Product) error {
+func (r *MongoProductRepository) Update(ctx context.Context, id string, product *domain.Product) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -56,36 +56,36 @@ func (r *MongoProductRepository) Update(id string, product *domain.Product) erro
 	product.UpdatedAt = time.Now()
 	update := bson.M{"$set": product}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
 
-func (r *MongoProductRepository) Delete(id string) error {
+func (r *MongoProductRepository) Delete(ctx context.Context, id string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
 	update := bson.M{"$set": bson.M{"active": false, "updated_at": time.Now()}}
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
 
-func (r *MongoProductRepository) List(limit, offset int, category string) ([]*domain.Product, error) {
+func (r *MongoProductRepository) List(ctx context.Context, limit, offset int, category string) ([]*domain.Product, error) {
 	filter := bson.M{"active": true}
 	if category != "" {
 		filter["category"] = category
 	}
 
 	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset))
-	cursor, err := r.collection.Find(context.Background(), filter, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var products []*domain.Product
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		var product domain.Product
 		if err := cursor.Decode(&product); err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func (r *MongoProductRepository) List(limit, offset int, category string) ([]*do
 	return products, nil
 }
 
-func (r *MongoProductRepository) Search(query string, limit, offset int) ([]*domain.Product, error) {
+func (r *MongoProductRepository) Search(ctx context.Context, query string, limit, offset int) ([]*domain.Product, error) {
 	filter := bson.M{
 		"active": true,
 		"$or": []bson.M{
@@ -106,14 +106,14 @@ func (r *MongoProductRepository) Search(query string, limit, offset int) ([]*dom
 	}
 
 	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset))
-	cursor, err := r.collection.Find(context.Background(), filter, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var products []*domain.Product
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		var product domain.Product
 		if err := cursor.Decode(&product); err != nil {
 			return nil, err
@@ -124,7 +124,7 @@ func (r *MongoProductRepository) Search(query string, limit, offset int) ([]*dom
 	return products, nil
 }
 
-func (r *MongoProductRepository) UpdateStock(id string, quantity int) error {
+func (r *MongoProductRepository) UpdateStock(ctx context.Context, id string, quantity int) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -135,6 +135,6 @@ func (r *MongoProductRepository) UpdateStock(id string, quantity int) error {
 		"$set": bson.M{"updated_at": time.Now()},
 	}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
