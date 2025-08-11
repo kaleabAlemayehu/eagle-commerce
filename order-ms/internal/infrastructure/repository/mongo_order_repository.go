@@ -22,24 +22,24 @@ func NewMongoOrderRepository(db *mongo.Database) *MongoOrderRepository {
 	}
 }
 
-func (r *MongoOrderRepository) Create(order *domain.Order) error {
+func (r *MongoOrderRepository) Create(ctx context.Context, order *domain.Order) error {
 	order.ID = primitive.NewObjectID()
 	order.Status = domain.OrderStatusPending
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 
-	_, err := r.collection.InsertOne(context.Background(), order)
+	_, err := r.collection.InsertOne(ctx, order)
 	return err
 }
 
-func (r *MongoOrderRepository) GetByID(id string) (*domain.Order, error) {
+func (r *MongoOrderRepository) GetByID(ctx context.Context, id string) (*domain.Order, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var order domain.Order
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&order)
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&order)
 	if err != nil {
 		return nil, err
 	}
@@ -47,21 +47,21 @@ func (r *MongoOrderRepository) GetByID(id string) (*domain.Order, error) {
 	return &order, nil
 }
 
-func (r *MongoOrderRepository) GetByUserID(userID string, limit, offset int) ([]*domain.Order, error) {
+func (r *MongoOrderRepository) GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*domain.Order, error) {
 	filter := bson.M{"user_id": userID}
 	opts := options.Find().
 		SetLimit(int64(limit)).
 		SetSkip(int64(offset)).
 		SetSort(bson.M{"created_at": -1})
 
-	cursor, err := r.collection.Find(context.Background(), filter, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var orders []*domain.Order
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		var order domain.Order
 		if err := cursor.Decode(&order); err != nil {
 			return nil, err
@@ -72,7 +72,7 @@ func (r *MongoOrderRepository) GetByUserID(userID string, limit, offset int) ([]
 	return orders, nil
 }
 
-func (r *MongoOrderRepository) Update(id string, order *domain.Order) error {
+func (r *MongoOrderRepository) Update(ctx context.Context, id string, order *domain.Order) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -81,11 +81,11 @@ func (r *MongoOrderRepository) Update(id string, order *domain.Order) error {
 	order.UpdatedAt = time.Now()
 	update := bson.M{"$set": order}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
 
-func (r *MongoOrderRepository) UpdateStatus(id string, status domain.OrderStatus) error {
+func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, status domain.OrderStatus) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -98,24 +98,24 @@ func (r *MongoOrderRepository) UpdateStatus(id string, status domain.OrderStatus
 		},
 	}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, update)
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	return err
 }
 
-func (r *MongoOrderRepository) List(limit, offset int) ([]*domain.Order, error) {
+func (r *MongoOrderRepository) List(ctx context.Context, limit, offset int) ([]*domain.Order, error) {
 	opts := options.Find().
 		SetLimit(int64(limit)).
 		SetSkip(int64(offset)).
 		SetSort(bson.M{"created_at": -1})
 
-	cursor, err := r.collection.Find(context.Background(), bson.M{}, opts)
+	cursor, err := r.collection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 
 	var orders []*domain.Order
-	for cursor.Next(context.Background()) {
+	for cursor.Next(ctx) {
 		var order domain.Order
 		if err := cursor.Decode(&order); err != nil {
 			return nil, err

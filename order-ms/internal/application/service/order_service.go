@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
@@ -22,7 +23,7 @@ func NewOrderService(repo domain.OrderRepository, nats *messaging.OrderEventPubl
 	return service
 }
 
-func (s *OrderServiceImpl) CreateOrder(order *domain.Order) error {
+func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order) error {
 	if err := utils.ValidateStruct(order); err != nil {
 		return err
 	}
@@ -40,7 +41,7 @@ func (s *OrderServiceImpl) CreateOrder(order *domain.Order) error {
 	}
 
 	// Create order
-	if err := s.repo.Create(order); err != nil {
+	if err := s.repo.Create(ctx, order); err != nil {
 		return err
 	}
 
@@ -64,16 +65,16 @@ func (s *OrderServiceImpl) reserveStock(items []domain.OrderItem) {
 	}
 }
 
-func (s *OrderServiceImpl) GetOrder(id string) (*domain.Order, error) {
-	return s.repo.GetByID(id)
+func (s *OrderServiceImpl) GetOrder(ctx context.Context, id string) (*domain.Order, error) {
+	return s.repo.GetByID(ctx, id)
 }
 
-func (s *OrderServiceImpl) GetOrdersByUser(userID string, limit, offset int) ([]*domain.Order, error) {
-	return s.repo.GetByUserID(userID, limit, offset)
+func (s *OrderServiceImpl) GetOrdersByUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Order, error) {
+	return s.repo.GetByUserID(ctx, userID, limit, offset)
 }
 
-func (s *OrderServiceImpl) UpdateOrderStatus(id string, status domain.OrderStatus) error {
-	order, err := s.repo.GetByID(id)
+func (s *OrderServiceImpl) UpdateOrderStatus(ctx context.Context, id string, status domain.OrderStatus) error {
+	order, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (s *OrderServiceImpl) UpdateOrderStatus(id string, status domain.OrderStatu
 		return errors.New("invalid status transition")
 	}
 
-	if err := s.repo.UpdateStatus(id, status); err != nil {
+	if err := s.repo.UpdateStatus(ctx, id, status); err != nil {
 		return err
 	}
 
@@ -92,12 +93,12 @@ func (s *OrderServiceImpl) UpdateOrderStatus(id string, status domain.OrderStatu
 	return s.nats.PublishOrderUpdated(order, status)
 }
 
-func (s *OrderServiceImpl) CancelOrder(id string) error {
-	return s.UpdateOrderStatus(id, domain.OrderStatusCancelled)
+func (s *OrderServiceImpl) CancelOrder(ctx context.Context, id string) error {
+	return s.UpdateOrderStatus(ctx, id, domain.OrderStatusCancelled)
 }
 
-func (s *OrderServiceImpl) ListOrders(limit, offset int) ([]*domain.Order, error) {
-	return s.repo.List(limit, offset)
+func (s *OrderServiceImpl) ListOrders(ctx context.Context, limit, offset int) ([]*domain.Order, error) {
+	return s.repo.List(ctx, limit, offset)
 }
 
 func (s *OrderServiceImpl) isValidStatusTransition(current, new domain.OrderStatus) bool {

@@ -1,8 +1,10 @@
 package domain
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Order struct {
@@ -42,19 +44,19 @@ const (
 )
 
 type OrderRepository interface {
-	Create(order *Order) error
-	GetByID(id string) (*Order, error)
-	GetByUserID(userID string, limit, offset int) ([]*Order, error)
-	Update(id string, order *Order) error
-	UpdateStatus(id string, status OrderStatus) error
-	List(limit, offset int) ([]*Order, error)
+	Create(ctx context.Context, order *Order) error
+	GetByID(ctx context.Context, id string) (*Order, error)
+	GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*Order, error)
+	Update(ctx context.Context, id string, order *Order) error
+	UpdateStatus(ctx context.Context, id string, status OrderStatus) error
+	List(ctx context.Context, limit, offset int) ([]*Order, error)
 }
 
 type OrderService interface {
-	CreateOrder(order *Order) error
-	GetOrder(id string) (*Order, error)
-	GetOrdersByUser(userID string, limit, offset int) ([]*Order, error)
-	UpdateOrderStatus(id string, status OrderStatus) error
-	CancelOrder(id string) error
-	ListOrders(limit, offset int) ([]*Order, error)
+	CreateOrder(ctx context.Context, order *Order) error
+	GetOrder(ctx context.Context, id string) (*Order, error)
+	GetOrdersByUser(ctx context.Context, userID string, limit, offset int) ([]*Order, error)
+	UpdateOrderStatus(ctx context.Context, id string, status OrderStatus) error
+	CancelOrder(ctx context.Context, id string) error
+	ListOrders(ctx context.Context, limit, offset int) ([]*Order, error)
 }

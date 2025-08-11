@@ -60,7 +60,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := h.orderService.CreateOrder(order); err != nil {
+	if err := h.orderService.CreateOrder(r.Context(), order); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			h.sendValidationErrorResponse(w, validationErrors)
 			return
@@ -86,7 +86,7 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	order, err := h.orderService.ListOrders(limit, offset)
+	order, err := h.orderService.ListOrders(r.Context(), limit, offset)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
 		return
@@ -106,7 +106,7 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	order, err := h.orderService.GetOrder(id)
+	order, err := h.orderService.GetOrder(r.Context(), id)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
 		return
@@ -135,7 +135,7 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
-	orders, err := h.orderService.GetOrdersByUser(userID, limit, offset)
+	orders, err := h.orderService.GetOrdersByUser(r.Context(), userID, limit, offset)
 	if err != nil {
 		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
@@ -165,12 +165,12 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 	}
 
 	status := domain.OrderStatus(req.Status)
-	if err := h.orderService.UpdateOrderStatus(id, status); err != nil {
+	if err := h.orderService.UpdateOrderStatus(r.Context(), id, status); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	updatedOrder, _ := h.orderService.GetOrder(id)
+	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
 	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
@@ -186,12 +186,12 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 func (h *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	if err := h.orderService.CancelOrder(id); err != nil {
+	if err := h.orderService.CancelOrder(r.Context(), id); err != nil {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	updatedOrder, _ := h.orderService.GetOrder(id)
+	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
 	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
