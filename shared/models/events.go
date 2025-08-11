@@ -21,6 +21,7 @@ const (
 	OrderCreatedEvent        = "order.created"
 	OrderCancelledEvent      = "order.cancelled"
 	OrderUpdatedEvent        = "order.updated"
+	OrderShippedEvent        = "order.shipped"
 	PaymentProcessedEvent    = "payment.processed"
 	StockCheckEvent          = "stock.check"
 	StockReserveEvent        = "stock.reserve"

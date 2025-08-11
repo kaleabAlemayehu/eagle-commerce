@@ -1,8 +1,10 @@
 package messaging
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
@@ -25,19 +27,19 @@ func NewOrderEventHandler(orderService domain.OrderService, natsClient *messagin
 
 func (h *OrderEventHandler) StartListening() error {
 	// Subscribe to payment events
-	_, err := h.natsClient.Subscribe("payment.processed", h.handlePaymentProcessed)
+	_, err := h.natsClient.Subscribe(models.PaymentProcessedEvent, h.handlePaymentProcessed)
 	if err != nil {
 		return err
 	}
 
 	// Subscribe to inventory events
-	_, err = h.natsClient.Subscribe("stock.check.response", h.handleStockCheckResponse)
+	_, err = h.natsClient.Subscribe(models.StockCheckResponseEvent, h.handleStockCheckResponse)
 	if err != nil {
 		return err
 	}
 
 	// Subscribe to user events
-	_, err = h.natsClient.Subscribe("user.updated", h.handleUserUpdated)
+	_, err = h.natsClient.Subscribe(models.UserUpdatedEvent, h.handleUserUpdated)
 	return err
 }
 
@@ -71,8 +73,10 @@ func (h *OrderEventHandler) handlePaymentProcessed(data []byte) {
 		log.Printf("Unknown payment status: %s", status)
 		return
 	}
+	ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancle()
 
-	if err := h.orderService.UpdateOrderStatus(orderID, newStatus); err != nil {
+	if err := h.orderService.UpdateOrderStatus(ctx, orderID, newStatus); err != nil {
 		log.Printf("Error updating order status: %v", err)
 		return
 	}
@@ -80,8 +84,12 @@ func (h *OrderEventHandler) handlePaymentProcessed(data []byte) {
 	log.Printf("Order %s status updated to %s based on payment result", orderID, newStatus)
 
 	// If order was cancelled due to payment failure, publish cancellation event
+
 	if newStatus == domain.OrderStatusCancelled {
-		order, err := h.orderService.GetOrder(orderID)
+
+		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancle()
+		order, err := h.orderService.GetOrder(ctx, orderID)
 		if err == nil {
 			h.publisher.PublishOrderCancelled(order)
 		}
@@ -117,7 +125,7 @@ func (h *OrderEventHandler) handleStockCheckResponse(data []byte) {
 		productID, requestID, available)
 
 	// INFO:
-	// Here you could store the response for correlation with pending orders
+	// Here I could store the response for correlation with pending orders
 	// or handle insufficient stock scenarios
 }
 
@@ -135,6 +143,7 @@ func (h *OrderEventHandler) handleUserUpdated(data []byte) {
 	}
 
 	log.Printf("User %s was updated - orders may need address updates", userID)
-	// Here you could implement logic to update user information in orders
+	// INFO:
+	// Here i could implement logic to update user information in orders
 	// or send notifications about profile changes
 }

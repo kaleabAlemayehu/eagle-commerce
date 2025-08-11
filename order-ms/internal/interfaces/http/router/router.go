@@ -9,7 +9,7 @@ import (
 	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-// TODO: there is a lot of missing handlers
+// TODO: there is a lot of handlers to be impliment here
 
 func NewRouter(orderHandler *handler.OrderHandler, mode string) *chi.Mux {
 	r := chi.NewRouter()

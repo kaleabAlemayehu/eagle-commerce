@@ -5,6 +5,7 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
+
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
 )
 
@@ -20,7 +21,7 @@ func NewOrderEventPublisher(natsClient *messaging.NATSClient) *OrderEventPublish
 
 func (p *OrderEventPublisher) PublishOrderCreated(order *domain.Order) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.OrderCreatedEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
@@ -35,12 +36,12 @@ func (p *OrderEventPublisher) PublishOrderCreated(order *domain.Order) error {
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("order.created", event)
+	return p.natsClient.Publish(models.OrderCreatedEvent, event)
 }
 
 func (p *OrderEventPublisher) PublishOrderUpdated(order *domain.Order, oldStatus domain.OrderStatus) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.OrderUpdatedEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
@@ -54,13 +55,13 @@ func (p *OrderEventPublisher) PublishOrderUpdated(order *domain.Order, oldStatus
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("order.updated", event)
+	return p.natsClient.Publish(models.OrderUpdatedEvent, event)
 }
 
 func (p *OrderEventPublisher) PublishOrderCancelled(order *domain.Order) error {
 	event := models.Event{
-		ID:     generateEventID(),
-		Type:   "order.cancelled",
+		ID:     messaging.GenerateEventID(),
+		Type:   models.OrderCancelledEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
 			"order_id":     order.ID.Hex(),
@@ -72,13 +73,13 @@ func (p *OrderEventPublisher) PublishOrderCancelled(order *domain.Order) error {
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("order.cancelled", event)
+	return p.natsClient.Publish(models.OrderCancelledEvent, event)
 }
 
 func (p *OrderEventPublisher) PublishOrderShipped(order *domain.Order, trackingID string) error {
 	event := models.Event{
-		ID:     generateEventID(),
-		Type:   "order.shipped",
+		ID:     messaging.GenerateEventID(),
+		Type:   models.OrderShippedEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
 			"order_id":    order.ID.Hex(),
@@ -90,35 +91,31 @@ func (p *OrderEventPublisher) PublishOrderShipped(order *domain.Order, trackingI
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("order.shipped", event)
+	return p.natsClient.Publish(models.OrderShippedEvent, event)
 }
 
 func (p *OrderEventPublisher) PublishStockCheck(item *domain.OrderItem) error {
 	// Publish stock check request
 	event := models.Event{
-		Type:   "stock.check",
+		Type:   models.StockCheckEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
 			"product_id": item.ProductID,
 			"quantity":   item.Quantity,
 		},
 	}
-	return p.natsClient.Publish("stock.check", event)
+	return p.natsClient.Publish(models.StockCheckEvent, event)
 }
 
 func (p *OrderEventPublisher) PublishReserveStock(item *domain.OrderItem) error {
 	// Publish stock check request
 	event := models.Event{
-		Type:   "stock.reserve",
+		Type:   models.StockReserveEvent,
 		Source: "order-service",
 		Data: map[string]interface{}{
 			"product_id": item.ProductID,
 			"quantity":   item.Quantity,
 		},
 	}
-	return p.natsClient.Publish("stock.reserve", event)
-}
-
-func generateEventID() string {
-	return time.Now().Format("20060102150405") + "-" + "order"
+	return p.natsClient.Publish(models.StockReserveEvent, event)
 }
