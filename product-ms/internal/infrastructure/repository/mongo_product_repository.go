@@ -131,7 +131,7 @@ func (r *MongoProductRepository) UpdateStock(ctx context.Context, id string, qua
 	}
 
 	update := bson.M{
-		"$inc": bson.M{"stock": -quantity},
+		"$inc": bson.M{"stock": quantity},
 		"$set": bson.M{"updated_at": time.Now()},
 	}
 

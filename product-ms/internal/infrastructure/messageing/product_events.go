@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -123,8 +124,10 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 		log.Printf("Invalid quantity in stock.check event")
 		return
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	available, _, err := h.productService.CheckStock(productID, int(quantity))
+	available, _, err := h.productService.CheckStock(ctx, productID, int(quantity))
 	if err != nil {
 		log.Printf("Error checking stock: %v", err)
 		return
@@ -165,8 +168,9 @@ func (h *ProductEventHandler) handleStockReserve(data []byte) {
 		log.Printf("Invalid quantity in stock.reserve event")
 		return
 	}
-
-	err := h.productService.ReserveStock(productID, int(quantity))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := h.productService.ReserveStock(ctx, productID, int(quantity))
 	if err != nil {
 		log.Printf("Error reserving stock: %v", err)
 		return
@@ -208,6 +212,15 @@ func (h *ProductEventHandler) handleOrderCancelled(data []byte) {
 		// TODO:
 		// Restore stock by adding back the quantity
 		// This would need a RestoreStock method in the service
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := h.productService.RestoreStock(ctx, productID, int(quantity)); err != nil {
+			log.Printf("Error restoring stock: %v", err)
+			return
+		}
+
 		log.Printf("Restoring stock for product %s: %d units", productID, int(quantity))
 	}
 }

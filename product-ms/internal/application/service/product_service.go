@@ -71,8 +71,8 @@ func (s *ProductServiceImpl) CheckStock(ctx context.Context, id string, quantity
 	return product.Stock >= quantity, product.Stock, nil
 }
 
-func (s *ProductServiceImpl) ReserveStock(id string, quantity int) error {
-	hasStock, n, err := s.CheckStock(id, quantity)
+func (s *ProductServiceImpl) ReserveStock(ctx context.Context, id string, quantity int) error {
+	hasStock, n, err := s.CheckStock(ctx, id, quantity)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,22 @@ func (s *ProductServiceImpl) ReserveStock(id string, quantity int) error {
 		return errors.New("insufficient stock")
 	}
 
-	s.repo.UpdateStock(id, quantity)
+	if err := s.repo.UpdateStock(ctx, id, -quantity); err != nil {
+		return err
+	}
 
 	return s.nats.PublishStockUpdated(id, n, quantity)
+}
+
+func (s *ProductServiceImpl) RestoreStock(ctx context.Context, id string, quantity int) error {
+	product, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdateStock(ctx, id, quantity); err != nil {
+		return err
+	}
+
+	return s.nats.PublishStockUpdated(id, product.Stock, quantity)
 }
