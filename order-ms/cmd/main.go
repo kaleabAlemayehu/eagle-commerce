@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/application/service"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/messaging"
@@ -28,14 +34,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to MongoDB:", err)
 	}
-	defer db.Close()
 
 	// Connect to NATS
 	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
-	defer natsClient.Close()
 	nats := messaging.NewOrderEventPublisher(natsClient)
 
 	// Initialize dependencies
@@ -50,8 +54,32 @@ func main() {
 	// Setup router
 	r := router.NewRouter(orderHandler, mode)
 
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	// Start server
 	port := "8083"
 	fmt.Printf("Order service starting on port %s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	server := http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("ListenAndServer error err: %v", err)
+		}
+	}()
+	<-stop
+
+	log.Println("Shutting down gracefully...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("HTTP server Shutdown error: %v", err)
+	}
+	natsClient.Close()
+
+	if err := db.Close(); err != nil {
+		log.Printf("Error closing MongoDB connection: %v", err)
+	}
+	log.Println("Server stopped")
 }
