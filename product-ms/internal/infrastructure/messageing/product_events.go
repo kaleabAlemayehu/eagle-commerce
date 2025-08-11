@@ -63,7 +63,7 @@ func (p *ProductEventPublisher) PublishProductUpdated(product *domain.Product) e
 func (p *ProductEventPublisher) PublishStockUpdated(productID string, oldStock, newStock int) error {
 	event := models.Event{
 		ID:     generateEventID(),
-		Type:   "product.stock.updated",
+		Type:   models.ProductStockUpdated,
 		Source: "product-service",
 		Data: map[string]interface{}{
 			"product_id": productID,
@@ -133,7 +133,7 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 	// Publish response
 	responseEvent := models.Event{
 		ID:     generateEventID(),
-		Type:   "stock.check.response",
+		Type:   models.ProductStockCheckResponse,
 		Source: "product-service",
 		Data: map[string]interface{}{
 			"product_id": productID,

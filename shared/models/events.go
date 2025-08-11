@@ -12,12 +12,14 @@ type Event struct {
 
 // Event types
 const (
-	UserCreatedEvent      = "user.created"
-	UserDeletedEvent      = "user.deleted"
-	UserUpdatedEvent      = "user.updated"
-	ProductCreatedEvent   = "product.created"
-	ProductUpdatedEvent   = "product.updated"
-	OrderCreatedEvent     = "order.created"
-	OrderUpdatedEvent     = "order.updated"
-	PaymentProcessedEvent = "payment.processed"
+	UserCreatedEvent          = "user.created"
+	UserDeletedEvent          = "user.deleted"
+	UserUpdatedEvent          = "user.updated"
+	ProductCreatedEvent       = "product.created"
+	ProductUpdatedEvent       = "product.updated"
+	ProductStockCheckResponse = "stock.check.response"
+	ProductStockUpdated       = "product.stock.updated"
+	OrderCreatedEvent         = "order.created"
+	OrderUpdatedEvent         = "order.updated"
+	PaymentProcessedEvent     = "payment.processed"
 )
