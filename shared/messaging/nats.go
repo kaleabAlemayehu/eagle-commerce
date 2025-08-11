@@ -3,6 +3,7 @@ package messaging
 import (
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 )
 
@@ -35,4 +36,8 @@ func (n *NATSClient) Subscribe(subject string, handler func([]byte)) (*nats.Subs
 
 func (n *NATSClient) Close() {
 	n.conn.Close()
+}
+
+func GenerateEventID() string {
+	return uuid.NewString()
 }

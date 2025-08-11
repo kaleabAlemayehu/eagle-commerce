@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kaleabAlemayehu/eagle-commerce/services/user-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/models"
@@ -23,7 +22,7 @@ func NewUserEventPublisher(natsClient *messaging.NATSClient) *UserEventPublisher
 
 func (p *UserEventPublisher) PublishUserCreated(user *domain.User) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.UserCreatedEvent,
 		Source: "user-service",
 		Data: map[string]interface{}{
@@ -41,7 +40,7 @@ func (p *UserEventPublisher) PublishUserCreated(user *domain.User) error {
 
 func (p *UserEventPublisher) PublishUserUpdated(user *domain.User) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.UserUpdatedEvent,
 		Source: "user-service",
 		Data: map[string]interface{}{
@@ -59,7 +58,7 @@ func (p *UserEventPublisher) PublishUserUpdated(user *domain.User) error {
 
 func (p *UserEventPublisher) PublishUserDeleted(userID string) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.UserDeletedEvent,
 		Source: "user-service",
 		Data: map[string]interface{}{
@@ -122,8 +121,4 @@ func (h *UserEventHandler) handlePaymentProcessed(data []byte) {
 	// INFO:
 	// Handle payment processing for user notifications, etc.
 	log.Printf("Payment processed: %+v", event.Data)
-}
-
-func generateEventID() string {
-	return uuid.NewString()
 }

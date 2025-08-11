@@ -22,7 +22,7 @@ func NewProductEventPublisher(natsClient *messaging.NATSClient) *ProductEventPub
 
 func (p *ProductEventPublisher) PublishProductCreated(product *domain.Product) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.ProductCreatedEvent,
 		Source: "product-service",
 		Data: map[string]interface{}{
@@ -42,7 +42,7 @@ func (p *ProductEventPublisher) PublishProductCreated(product *domain.Product) e
 
 func (p *ProductEventPublisher) PublishProductUpdated(product *domain.Product) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.ProductUpdatedEvent,
 		Source: "product-service",
 		Data: map[string]interface{}{
@@ -62,7 +62,7 @@ func (p *ProductEventPublisher) PublishProductUpdated(product *domain.Product) e
 
 func (p *ProductEventPublisher) PublishStockUpdated(productID string, oldStock, newStock int) error {
 	event := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.ProductStockUpdated,
 		Source: "product-service",
 		Data: map[string]interface{}{
@@ -132,7 +132,7 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 
 	// Publish response
 	responseEvent := models.Event{
-		ID:     generateEventID(),
+		ID:     messaging.GenerateEventID(),
 		Type:   models.ProductStockCheckResponse,
 		Source: "product-service",
 		Data: map[string]interface{}{
@@ -210,8 +210,4 @@ func (h *ProductEventHandler) handleOrderCancelled(data []byte) {
 		// This would need a RestoreStock method in the service
 		log.Printf("Restoring stock for product %s: %d units", productID, int(quantity))
 	}
-}
-
-func generateEventID() string {
-	return time.Now().Format("20060102150405") + "-" + "product"
 }
