@@ -1,7 +1,16 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
 	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/repository"
@@ -10,8 +19,6 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
-	"log"
-	"net/http"
 )
 
 // @title Product Service API
@@ -27,14 +34,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to MongoDB:", err)
 	}
-	defer db.Close()
 
 	// Connect to NATS
 	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
 		log.Fatal("Failed to connect to NATS:", err)
 	}
-	defer natsClient.Close()
 	nats := messaging.NewProductEventPublisher(natsClient)
 
 	// Initialize dependencies
@@ -48,8 +53,36 @@ func main() {
 	// Setup router
 	r := router.NewRouter(productHandler)
 
-	// Start server
 	port := "8082"
-	fmt.Printf("Product service starting on port %s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	server := http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Start server
+	go func() {
+		fmt.Printf("Product service starting on port %s\n", port)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("ListenAndServer error err: %v", err)
+		}
+
+	}()
+	<-stop
+
+	log.Println("Shutting down gracefully...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("HTTP server Shutdown error: %v", err)
+	}
+	natsClient.Close()
+
+	if err := db.Close(); err != nil {
+		log.Printf("Error closing MongoDB connection: %v", err)
+	}
+
+	log.Println("Server stopped")
+
 }
