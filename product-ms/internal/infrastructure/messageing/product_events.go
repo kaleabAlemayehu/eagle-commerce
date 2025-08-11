@@ -38,7 +38,7 @@ func (p *ProductEventPublisher) PublishProductCreated(product *domain.Product) e
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("product.created", event)
+	return p.natsClient.Publish(models.ProductCreatedEvent, event)
 }
 
 func (p *ProductEventPublisher) PublishProductUpdated(product *domain.Product) error {
@@ -58,13 +58,13 @@ func (p *ProductEventPublisher) PublishProductUpdated(product *domain.Product) e
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("product.updated", event)
+	return p.natsClient.Publish(models.ProductUpdatedEvent, event)
 }
 
 func (p *ProductEventPublisher) PublishStockUpdated(productID string, oldStock, newStock int) error {
 	event := models.Event{
 		ID:     messaging.GenerateEventID(),
-		Type:   models.ProductStockUpdated,
+		Type:   models.ProductStockUpdatedEvent,
 		Source: "product-service",
 		Data: map[string]interface{}{
 			"product_id": productID,
@@ -75,7 +75,7 @@ func (p *ProductEventPublisher) PublishStockUpdated(productID string, oldStock, 
 		Timestamp: time.Now(),
 	}
 
-	return p.natsClient.Publish("product.stock.updated", event)
+	return p.natsClient.Publish(models.ProductStockUpdatedEvent, event)
 }
 
 type ProductEventHandler struct {
@@ -92,17 +92,17 @@ func NewProductEventHandler(productService domain.ProductService, natsClient *me
 
 func (h *ProductEventHandler) StartListening() error {
 	// Subscribe to stock-related events
-	_, err := h.natsClient.Subscribe("stock.check", h.handleStockCheck)
+	_, err := h.natsClient.Subscribe(models.StockCheckEvent, h.handleStockCheck)
 	if err != nil {
 		return err
 	}
 
-	_, err = h.natsClient.Subscribe("stock.reserve", h.handleStockReserve)
+	_, err = h.natsClient.Subscribe(models.StockReserveEvent, h.handleStockReserve)
 	if err != nil {
 		return err
 	}
 
-	_, err = h.natsClient.Subscribe("order.cancelled", h.handleOrderCancelled)
+	_, err = h.natsClient.Subscribe(models.OrderCancelledEvent, h.handleOrderCancelled)
 	return err
 }
 
@@ -136,7 +136,7 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 	// Publish response
 	responseEvent := models.Event{
 		ID:     messaging.GenerateEventID(),
-		Type:   models.ProductStockCheckResponse,
+		Type:   models.StockCheckResponseEvent,
 		Source: "product-service",
 		Data: map[string]interface{}{
 			"product_id": productID,
@@ -147,7 +147,7 @@ func (h *ProductEventHandler) handleStockCheck(data []byte) {
 		Timestamp: time.Now(),
 	}
 
-	h.natsClient.Publish("stock.check.response", responseEvent)
+	h.natsClient.Publish(models.StockCheckResponseEvent, responseEvent)
 }
 
 func (h *ProductEventHandler) handleStockReserve(data []byte) {
