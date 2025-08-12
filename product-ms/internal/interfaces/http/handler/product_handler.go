@@ -2,11 +2,14 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/dto"
+	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
@@ -72,7 +75,12 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.productService.GetProduct(r.Context(), id)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
+		if errors.Is(err, service.ErrProductNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		log.Printf("Internal server error in GetProduct: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "An internal server error occurred")
 		return
 	}
 

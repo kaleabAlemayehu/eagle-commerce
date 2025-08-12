@@ -6,7 +6,12 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
 	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messaging"
+	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
+)
+
+var (
+	ErrProductNotFound = errors.New("product not found")
 )
 
 type ProductServiceImpl struct {
@@ -36,7 +41,14 @@ func (s *ProductServiceImpl) CreateProduct(ctx context.Context, product *domain.
 }
 
 func (s *ProductServiceImpl) GetProduct(ctx context.Context, id string) (*domain.Product, error) {
-	return s.repo.GetByID(ctx, id)
+	product, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrProductNotFound) {
+			return nil, ErrProductNotFound
+		}
+		return nil, err
+	}
+	return product, nil
 }
 
 func (s *ProductServiceImpl) UpdateProduct(ctx context.Context, id string, product *domain.Product) (*domain.Product, error) {

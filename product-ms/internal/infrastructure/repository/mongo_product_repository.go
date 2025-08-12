@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,6 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
+)
+
+var (
+	ErrProductNotFound = errors.New("product not found")
 )
 
 type MongoProductRepository struct {
@@ -44,6 +49,9 @@ func (r *MongoProductRepository) GetByID(ctx context.Context, id string) (*domai
 	var product domain.Product
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&product)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrProductNotFound
+		}
 		return nil, err
 	}
 
@@ -61,6 +69,9 @@ func (r *MongoProductRepository) Update(ctx context.Context, id string, product 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedProduct *domain.Product
 	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(updatedProduct); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrProductNotFound
+		}
 		return nil, err
 	}
 	return updatedProduct, nil
