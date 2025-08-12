@@ -45,9 +45,9 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type LoginResponse struct {
-	User  UserResponse `json:"user"`
-	Token string       `json:"token"`
+type AuthResponse struct {
+	User  *UserResponse `json:"user"`
+	Token string        `json:"token"`
 }
 
 type ChangePasswordRequest struct {

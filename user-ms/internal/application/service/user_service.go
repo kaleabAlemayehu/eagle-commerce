@@ -26,37 +26,44 @@ func NewUserService(repo domain.UserRepository, nats *messaging.UserEventPublish
 	}
 }
 
-func (s *UserServiceImpl) CreateUser(ctx context.Context, user *domain.User) error {
+func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
 	// Validate user data
 	if err := utils.ValidateStruct(user); err != nil {
-		return err
+		return nil, "", err
 	}
 
 	// Check if user already exists
 	existingUser, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if !errors.Is(err, repository.ErrorUserNotFound) {
-			return err
+			return nil, "", err
 		}
 	}
 	if existingUser != nil {
-		return errors.New("user already exists")
+		return nil, "", errors.New("user already exists")
 	}
 
 	// Hash password
 	hashedPassword, err := argon.CreateHash(user.Password, argon.DefaultParams)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 	user.Password = string(hashedPassword)
 
 	// Create user
-	if err := s.repo.Create(ctx, user); err != nil {
-		return err
+	newUser, err := s.repo.Create(ctx, user)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// create token
+	token, err := s.auth.GenerateJWT(newUser.ID.String(), user.Email)
+	if err != nil {
+		return nil, "", errors.New("unable to generate JWT")
 	}
 
 	// Publish event
-	return s.nats.PublishUserCreated(user)
+	return newUser, token, s.nats.PublishUserCreated(user)
 }
 
 func (s *UserServiceImpl) GetUser(ctx context.Context, id string) (*domain.User, error) {
@@ -64,9 +71,11 @@ func (s *UserServiceImpl) GetUser(ctx context.Context, id string) (*domain.User,
 }
 
 func (s *UserServiceImpl) UpdateUser(ctx context.Context, id string, user *domain.User) (*domain.User, error) {
+
 	if err := utils.ValidateStruct(user); err != nil {
 		return nil, err
 	}
+
 	updatedUser, err := s.repo.Update(ctx, id, user)
 	if err != nil {
 		return nil, err

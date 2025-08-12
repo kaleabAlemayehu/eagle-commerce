@@ -27,7 +27,7 @@ type Address struct {
 }
 
 type UserRepository interface {
-	Create(ctx context.Context, user *User) error
+	Create(ctx context.Context, user *User) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	Update(ctx context.Context, id string, user *User) (*User, error)
@@ -36,7 +36,7 @@ type UserRepository interface {
 }
 
 type UserService interface {
-	CreateUser(ctx context.Context, user *User) error
+	RegisterUser(ctx context.Context, user *User) (*User, string, error)
 	GetUser(ctx context.Context, id string) (*User, error)
 	UpdateUser(ctx context.Context, id string, user *User) (*User, error)
 	DeleteUser(ctx context.Context, id string) error

@@ -27,13 +27,12 @@ func NewMongoUserRepository(db *mongo.Database) *MongoUserRepository {
 	}
 }
 
-func (r *MongoUserRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *MongoUserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-
 	_, err := r.collection.InsertOne(ctx, user)
-	return err
+	return user, err
 }
 
 func (r *MongoUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {

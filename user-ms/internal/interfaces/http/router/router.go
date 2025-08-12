@@ -28,7 +28,7 @@ func NewRouter(userHandler *handler.UserHandler, auth *sharedMiddleware.Auth) *c
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/login", userHandler.LoginUser)
-			r.Post("/", userHandler.CreateUser)
+			r.Post("/signup", userHandler.RegisterUser)
 			// Protected routes (with auth)
 			r.Group(func(r chi.Router) {
 				r.Use(auth.AuthMiddleware())

@@ -30,8 +30,8 @@ func NewUserHandler(userService domain.UserService) *UserHandler {
 // @Param user body dto.CreateUserRequest true "User data"
 // @Success 201 {object} dto.Response
 // @Failure 400 {object} dto.Response
-// @Router /users [post]
-func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+// @Router /signup [post]
+func (h *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -45,7 +45,8 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		LastName:  req.LastName,
 	}
 
-	if err := h.userService.CreateUser(r.Context(), user); err != nil {
+	newUser, token, err := h.userService.RegisterUser(r.Context(), user)
+	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
@@ -54,8 +55,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRes := h.toUserResponse(user)
-	utils.SendSuccessResponse(w, http.StatusCreated, userRes)
+	registerRes := dto.AuthResponse{
+		User:  h.toUserResponse(newUser),
+		Token: token,
+	}
+	utils.SendSuccessResponse(w, http.StatusCreated, registerRes)
 }
 
 // @Summary Get user by ID
@@ -180,8 +184,8 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginRes := dto.LoginResponse{
-		User: *h.toUserResponse(user), Token: token,
+	loginRes := dto.AuthResponse{
+		User: h.toUserResponse(user), Token: token,
 	}
 	utils.SendSuccessResponse(w, http.StatusOK, loginRes)
 }
