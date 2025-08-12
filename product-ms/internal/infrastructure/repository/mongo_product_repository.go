@@ -67,14 +67,14 @@ func (r *MongoProductRepository) Update(ctx context.Context, id string, product 
 	product.UpdatedAt = time.Now()
 	update := bson.M{"$set": product}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var updatedProduct *domain.Product
-	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(updatedProduct); err != nil {
+	var updatedProduct domain.Product
+	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(&updatedProduct); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrProductNotFound
 		}
 		return nil, err
 	}
-	return updatedProduct, nil
+	return &updatedProduct, nil
 }
 
 func (r *MongoProductRepository) Delete(ctx context.Context, id string) error {
@@ -84,7 +84,13 @@ func (r *MongoProductRepository) Delete(ctx context.Context, id string) error {
 	}
 
 	update := bson.M{"$set": bson.M{"active": false, "updated_at": time.Now()}}
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return ErrProductNotFound
+	}
 	return err
 }
 

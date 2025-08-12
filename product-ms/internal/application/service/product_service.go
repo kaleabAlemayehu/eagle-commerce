@@ -65,7 +65,13 @@ func (s *ProductServiceImpl) UpdateProduct(ctx context.Context, id string, produ
 }
 
 func (s *ProductServiceImpl) DeleteProduct(ctx context.Context, id string) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		if errors.Is(err, repository.ErrProductNotFound) {
+			return ErrProductNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *ProductServiceImpl) ListProducts(ctx context.Context, limit, offset int, category string) ([]*domain.Product, error) {

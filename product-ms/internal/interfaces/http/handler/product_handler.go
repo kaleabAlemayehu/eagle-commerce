@@ -32,6 +32,7 @@ func NewProductHandler(productService domain.ProductService) *ProductHandler {
 // @Param product body dto.CreateProductRequest true "Product data"
 // @Success 201 {object} dto.Response
 // @Failure 400 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /products [post]
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateProductRequest
@@ -55,7 +56,8 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+		log.Printf("Internal server error in CreateProduct: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "An internal server error occurred")
 		return
 	}
 	productRes := h.toProductResponse(newProduct)
@@ -108,7 +110,8 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.productService.ListProducts(r.Context(), limit, offset, category)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		log.Printf("Internal server error in ListProducts: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
 	productsList := h.toProductResponseList(products)
@@ -145,7 +148,8 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 
 	products, err := h.productService.SearchProducts(r.Context(), query, limit, offset)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		log.Printf("Internal server error in SearchProducts: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
 
@@ -193,7 +197,13 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, service.ErrProductNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		log.Printf("Internal server error in UpdateProduct: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occoured")
 		return
 	}
 	productRes := h.toProductResponse(updatedProduct)
@@ -212,7 +222,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if err := h.productService.DeleteProduct(r.Context(), id); err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
+		if errors.Is(err, service.ErrProductNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		log.Printf("Internal server error in DeleteProduct: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error oocurred")
 		return
 	}
 
