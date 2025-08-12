@@ -33,7 +33,7 @@ func NewProductHandler(productService domain.ProductService) *ProductHandler {
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -48,14 +48,14 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.productService.CreateProduct(r.Context(), product); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
-			h.sendValidationErrorResponse(w, validationErrors)
+			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	productRes := h.toProductResponse(product)
-	h.sendSuccessResponse(w, http.StatusCreated, productRes)
+	utils.SendSuccessResponse(w, http.StatusCreated, productRes)
 }
 
 // @Summary Get product by ID
@@ -71,12 +71,12 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.productService.GetProduct(r.Context(), id)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
 
 	productRes := h.toProductResponse(product)
-	h.sendSuccessResponse(w, http.StatusOK, productRes)
+	utils.SendSuccessResponse(w, http.StatusOK, productRes)
 }
 
 // @Summary List products
@@ -99,7 +99,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.productService.ListProducts(r.Context(), limit, offset, category)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	productsList := h.toProductResponseList(products)
@@ -108,7 +108,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 		Total:    len(productsList),
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, productsRes)
+	utils.SendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
 // @Summary Search products
@@ -123,7 +123,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Search query is required")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Search query is required")
 		return
 	}
 
@@ -136,7 +136,7 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 
 	products, err := h.productService.SearchProducts(r.Context(), query, limit, offset)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -147,7 +147,7 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 		Total:    len(productList),
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, productsRes)
+	utils.SendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
 // @Summary Update product
@@ -165,7 +165,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -181,14 +181,14 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	updatedProduct, err := h.productService.UpdateProduct(r.Context(), id, product)
 	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
-			h.sendValidationErrorResponse(w, validationErrors)
+			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	productRes := h.toProductResponse(updatedProduct)
-	h.sendSuccessResponse(w, http.StatusOK, productRes)
+	utils.SendSuccessResponse(w, http.StatusOK, productRes)
 }
 
 // @Summary Delete product by ID
@@ -203,11 +203,11 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if err := h.productService.DeleteProduct(r.Context(), id); err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
 
-	h.sendSuccessResponse(w, http.StatusOK, "Product Deleted Successfully")
+	utils.SendSuccessResponse(w, http.StatusOK, "Product Deleted Successfully")
 }
 
 // @Summary Check stoke of a new product
@@ -223,12 +223,12 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 	var req dto.StockCheckRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 	ok, n, err := h.productService.CheckStock(r.Context(), req.ProductID, req.Quantity)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
 	res := dto.StockCheckResponse{
@@ -237,7 +237,7 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 		Stock:     n,
 		Requested: req.Quantity,
 	}
-	h.sendSuccessResponse(w, http.StatusOK, res)
+	utils.SendSuccessResponse(w, http.StatusOK, res)
 }
 
 // @Summary Check stoke of a new product
@@ -253,46 +253,18 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 	var req dto.StockUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 	if err := utils.ValidateStruct(req); err != nil {
-		h.sendValidationErrorResponse(w, err)
+		utils.SendValidationErrorResponse(w, err)
 		return
 	}
 	if err := h.productService.ReserveStock(r.Context(), req.ProductID, req.Quantity); err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Product not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
-	h.sendSuccessResponse(w, http.StatusOK, "Stock reserved successfully")
-}
-
-func (h *ProductHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: true,
-		Data:    data,
-	})
-}
-
-func (h *ProductHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   message,
-	})
-}
-
-func (h *ProductHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   "Validation failed",
-		Errors:  errors,
-	})
+	utils.SendSuccessResponse(w, http.StatusOK, "Stock reserved successfully")
 }
 
 func (h *ProductHandler) toProductResponse(p *domain.Product) dto.ProductResponse {
