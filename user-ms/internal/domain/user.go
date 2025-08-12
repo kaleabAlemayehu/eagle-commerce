@@ -30,7 +30,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 	GetByID(ctx context.Context, id string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
-	Update(ctx context.Context, id string, user *User) error
+	Update(ctx context.Context, id string, user *User) (*User, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, limit, offset int) ([]*User, error)
 }
@@ -38,7 +38,7 @@ type UserRepository interface {
 type UserService interface {
 	CreateUser(ctx context.Context, user *User) error
 	GetUser(ctx context.Context, id string) (*User, error)
-	UpdateUser(ctx context.Context, id string, user *User) error
+	UpdateUser(ctx context.Context, id string, user *User) (*User, error)
 	DeleteUser(ctx context.Context, id string) error
 	ListUsers(ctx context.Context, limit, offset int) ([]*User, error)
 	AuthenticateUser(ctx context.Context, email, password string) (*User, string, error)

@@ -162,7 +162,8 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 
-	if err := h.userService.UpdateUser(r.Context(), id, user); err != nil {
+	updatedUser, err := h.userService.UpdateUser(r.Context(), id, user)
+	if err != nil {
 		utils.SendErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}

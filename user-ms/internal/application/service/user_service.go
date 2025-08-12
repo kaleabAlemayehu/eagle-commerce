@@ -63,15 +63,15 @@ func (s *UserServiceImpl) GetUser(ctx context.Context, id string) (*domain.User,
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *UserServiceImpl) UpdateUser(ctx context.Context, id string, user *domain.User) error {
+func (s *UserServiceImpl) UpdateUser(ctx context.Context, id string, user *domain.User) (*domain.User, error) {
 	if err := utils.ValidateStruct(user); err != nil {
-		return err
+		return nil, err
 	}
-
-	if err := s.repo.Update(ctx, id, user); err != nil {
-		return err
+	updatedUser, err := s.repo.Update(ctx, id, user)
+	if err != nil {
+		return nil, err
 	}
-	return s.nats.PublishUserUpdated(user)
+	return updatedUser, s.nats.PublishUserUpdated(updatedUser)
 }
 
 func (s *UserServiceImpl) DeleteUser(ctx context.Context, id string) error {

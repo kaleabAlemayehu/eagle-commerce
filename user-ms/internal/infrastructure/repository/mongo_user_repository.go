@@ -67,17 +67,21 @@ func (r *MongoUserRepository) GetByEmail(ctx context.Context, email string) (*do
 	return &user, nil
 }
 
-func (r *MongoUserRepository) Update(ctx context.Context, id string, user *domain.User) error {
+func (r *MongoUserRepository) Update(ctx context.Context, id string, user *domain.User) (*domain.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	user.UpdatedAt = time.Now()
 	update := bson.M{"$set": user}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedUser *domain.User
+	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(updatedUser); err != nil {
+		return nil, err
+	}
 
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	return err
+	return updatedUser, nil
 }
 
 func (r *MongoUserRepository) Delete(ctx context.Context, id string) error {
