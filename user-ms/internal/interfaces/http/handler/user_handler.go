@@ -54,21 +54,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRes := &dto.UserResponse{
-		ID:        user.ID.String(),
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Address: &dto.AddressDTO{
-			Street:  user.Address.Street,
-			City:    user.Address.City,
-			State:   user.Address.State,
-			ZipCode: user.Address.ZipCode,
-			Country: user.Address.Country,
-		},
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
+	userRes := h.toUserResponse(user)
 	utils.SendSuccessResponse(w, http.StatusCreated, userRes)
 }
 
@@ -89,22 +75,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRes := &dto.UserResponse{
-		ID:        user.ID.String(),
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Address: &dto.AddressDTO{
-			Street:  user.Address.Street,
-			City:    user.Address.City,
-			State:   user.Address.State,
-			ZipCode: user.Address.ZipCode,
-			Country: user.Address.Country,
-		},
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-
+	userRes := h.toUserResponse(user)
 	utils.SendSuccessResponse(w, http.StatusOK, userRes)
 }
 
@@ -168,22 +139,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRes := &dto.UserResponse{
-		ID:        user.ID.String(),
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Address: &dto.AddressDTO{
-			Street:  user.Address.Street,
-			City:    user.Address.City,
-			State:   user.Address.State,
-			ZipCode: user.Address.ZipCode,
-			Country: user.Address.Country,
-		},
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-
+	userRes := h.toUserResponse(updatedUser)
 	utils.SendSuccessResponse(w, http.StatusOK, userRes)
 }
 
@@ -225,22 +181,25 @@ func (h *UserHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	loginRes := dto.LoginResponse{
-		User: dto.UserResponse{
-			ID:        user.ID.String(),
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Address: &dto.AddressDTO{
-				Street:  user.Address.Street,
-				City:    user.Address.City,
-				State:   user.Address.State,
-				ZipCode: user.Address.ZipCode,
-				Country: user.Address.Country,
-			},
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		},
-		Token: token,
+		User: *h.toUserResponse(user), Token: token,
 	}
 	utils.SendSuccessResponse(w, http.StatusOK, loginRes)
+}
+
+func (h *UserHandler) toUserResponse(u *domain.User) *dto.UserResponse {
+	return &dto.UserResponse{
+		ID:        u.ID.String(),
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Address: &dto.AddressDTO{
+			Street:  u.Address.Street,
+			City:    u.Address.City,
+			State:   u.Address.State,
+			ZipCode: u.Address.ZipCode,
+			Country: u.Address.Country,
+		},
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
 }
