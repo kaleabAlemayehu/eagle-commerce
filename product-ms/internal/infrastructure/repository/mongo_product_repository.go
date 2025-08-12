@@ -47,17 +47,20 @@ func (r *MongoProductRepository) GetByID(ctx context.Context, id string) (*domai
 	return &product, nil
 }
 
-func (r *MongoProductRepository) Update(ctx context.Context, id string, product *domain.Product) error {
+func (r *MongoProductRepository) Update(ctx context.Context, id string, product *domain.Product) (*domain.Product, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	product.UpdatedAt = time.Now()
 	update := bson.M{"$set": product}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	return err
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedProduct *domain.Product
+	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(updatedProduct); err != nil {
+		return nil, err
+	}
+	return updatedProduct, nil
 }
 
 func (r *MongoProductRepository) Delete(ctx context.Context, id string) error {

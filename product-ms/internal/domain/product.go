@@ -23,7 +23,7 @@ type Product struct {
 type ProductRepository interface {
 	Create(ctx context.Context, product *Product) error
 	GetByID(ctx context.Context, id string) (*Product, error)
-	Update(ctx context.Context, id string, product *Product) error
+	Update(ctx context.Context, id string, product *Product) (*Product, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, limit, offset int, category string) ([]*Product, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*Product, error)
@@ -33,7 +33,7 @@ type ProductRepository interface {
 type ProductService interface {
 	CreateProduct(ctx context.Context, product *Product) error
 	GetProduct(ctx context.Context, id string) (*Product, error)
-	UpdateProduct(ctx context.Context, id string, product *Product) error
+	UpdateProduct(ctx context.Context, id string, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id string) error
 	ListProducts(ctx context.Context, limit, offset int, category string) ([]*Product, error)
 	SearchProducts(ctx context.Context, query string, limit, offset int) ([]*Product, error)

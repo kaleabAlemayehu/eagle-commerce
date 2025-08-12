@@ -178,7 +178,8 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		Images:      req.Images,
 	}
 
-	if err := h.productService.UpdateProduct(r.Context(), id, product); err != nil {
+	updatedProduct, err := h.productService.UpdateProduct(r.Context(), id, product)
+	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			h.sendValidationErrorResponse(w, validationErrors)
 			return
@@ -186,7 +187,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	productRes := h.toProductResponse(product)
+	productRes := h.toProductResponse(updatedProduct)
 	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
 

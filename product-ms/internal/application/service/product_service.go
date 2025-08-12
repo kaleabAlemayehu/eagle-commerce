@@ -38,16 +38,17 @@ func (s *ProductServiceImpl) GetProduct(ctx context.Context, id string) (*domain
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *ProductServiceImpl) UpdateProduct(ctx context.Context, id string, product *domain.Product) error {
+func (s *ProductServiceImpl) UpdateProduct(ctx context.Context, id string, product *domain.Product) (*domain.Product, error) {
 	if err := utils.ValidateStruct(product); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := s.repo.Update(ctx, id, product); err != nil {
-		return err
+	updatedProduct, err := s.repo.Update(ctx, id, product)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.nats.PublishProductUpdated(product)
+	return updatedProduct, s.nats.PublishProductUpdated(product)
 }
 
 func (s *ProductServiceImpl) DeleteProduct(ctx context.Context, id string) error {
