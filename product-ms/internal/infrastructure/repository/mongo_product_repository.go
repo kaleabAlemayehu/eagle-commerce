@@ -22,14 +22,17 @@ func NewMongoProductRepository(db *mongo.Database) *MongoProductRepository {
 	}
 }
 
-func (r *MongoProductRepository) Create(ctx context.Context, product *domain.Product) error {
+func (r *MongoProductRepository) Create(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	product.ID = primitive.NewObjectID()
 	product.Active = true
 	product.CreatedAt = time.Now()
 	product.UpdatedAt = time.Now()
 
 	_, err := r.collection.InsertOne(ctx, product)
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
 
 func (r *MongoProductRepository) GetByID(ctx context.Context, id string) (*domain.Product, error) {

@@ -21,17 +21,18 @@ func NewProductService(repo domain.ProductRepository, nats *messaging.ProductEve
 	}
 }
 
-func (s *ProductServiceImpl) CreateProduct(ctx context.Context, product *domain.Product) error {
+func (s *ProductServiceImpl) CreateProduct(ctx context.Context, product *domain.Product) (*domain.Product, error) {
 	if err := utils.ValidateStruct(product); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := s.repo.Create(ctx, product); err != nil {
-		return err
+	newProduct, err := s.repo.Create(ctx, product)
+	if err != nil {
+		return nil, err
 	}
 
 	// Publish event
-	return s.nats.PublishProductCreated(product)
+	return newProduct, s.nats.PublishProductCreated(product)
 }
 
 func (s *ProductServiceImpl) GetProduct(ctx context.Context, id string) (*domain.Product, error) {

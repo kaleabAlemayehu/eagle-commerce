@@ -21,7 +21,7 @@ type Product struct {
 }
 
 type ProductRepository interface {
-	Create(ctx context.Context, product *Product) error
+	Create(ctx context.Context, product *Product) (*Product, error)
 	GetByID(ctx context.Context, id string) (*Product, error)
 	Update(ctx context.Context, id string, product *Product) (*Product, error)
 	Delete(ctx context.Context, id string) error
@@ -31,7 +31,7 @@ type ProductRepository interface {
 }
 
 type ProductService interface {
-	CreateProduct(ctx context.Context, product *Product) error
+	CreateProduct(ctx context.Context, product *Product) (*Product, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	UpdateProduct(ctx context.Context, id string, product *Product) (*Product, error)
 	DeleteProduct(ctx context.Context, id string) error

@@ -46,7 +46,8 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		Images:      req.Images,
 	}
 
-	if err := h.productService.CreateProduct(r.Context(), product); err != nil {
+	newProduct, err := h.productService.CreateProduct(r.Context(), product)
+	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
@@ -54,7 +55,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	productRes := h.toProductResponse(product)
+	productRes := h.toProductResponse(newProduct)
 	utils.SendSuccessResponse(w, http.StatusCreated, productRes)
 }
 
