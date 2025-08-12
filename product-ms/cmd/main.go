@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
-	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messageing"
+	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messaging"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/handler"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/router"

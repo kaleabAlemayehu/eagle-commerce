@@ -186,9 +186,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	updatedProduct, _ := h.productService.GetProduct(r.Context(), id)
-	productRes := h.toProductResponse(updatedProduct)
+	productRes := h.toProductResponse(product)
 	h.sendSuccessResponse(w, http.StatusOK, productRes)
 }
 
