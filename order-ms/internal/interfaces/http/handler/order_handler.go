@@ -33,7 +33,7 @@ func NewOrderHandler(orderService domain.OrderService) *OrderHandler {
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
@@ -62,15 +62,15 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.orderService.CreateOrder(r.Context(), order); err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
-			h.sendValidationErrorResponse(w, validationErrors)
+			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	orderRes := h.toOrderResponse(order)
 
-	h.sendSuccessResponse(w, http.StatusCreated, orderRes)
+	utils.SendSuccessResponse(w, http.StatusCreated, orderRes)
 }
 
 // @Summary Get order list
@@ -88,11 +88,11 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 	order, err := h.orderService.ListOrders(r.Context(), limit, offset)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
 		return
 	}
 	orders := h.toOrderListResponse(order)
-	h.sendSuccessResponse(w, http.StatusOK, orders)
+	utils.SendSuccessResponse(w, http.StatusOK, orders)
 }
 
 // @Summary Get order by ID
@@ -108,12 +108,12 @@ func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	order, err := h.orderService.GetOrder(r.Context(), id)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusNotFound, "Order not found")
+		utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
 		return
 	}
 	orderRes := h.toOrderResponse(order)
 
-	h.sendSuccessResponse(w, http.StatusOK, orderRes)
+	utils.SendSuccessResponse(w, http.StatusOK, orderRes)
 }
 
 // @Summary Get user orders
@@ -137,12 +137,12 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 
 	orders, err := h.orderService.GetOrdersByUser(r.Context(), userID, limit, offset)
 	if err != nil {
-		h.sendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	ordersRes := h.toOrderListResponse(orders)
 
-	h.sendSuccessResponse(w, http.StatusOK, ordersRes)
+	utils.SendSuccessResponse(w, http.StatusOK, ordersRes)
 }
 
 // @Summary Update order status
@@ -160,19 +160,19 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 
 	var req dto.UpdateOrderStatusRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	status := domain.OrderStatus(req.Status)
 	if err := h.orderService.UpdateOrderStatus(r.Context(), id, status); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
-	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
+	utils.SendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
 
 // @Summary Cancel order
@@ -187,41 +187,13 @@ func (h *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if err := h.orderService.CancelOrder(r.Context(), id); err != nil {
-		h.sendErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
-	h.sendSuccessResponse(w, http.StatusOK, updatedOrderRes)
-}
-
-func (h *OrderHandler) sendSuccessResponse(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: true,
-		Data:    data,
-	})
-}
-
-func (h *OrderHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   message,
-	})
-}
-
-func (h *OrderHandler) sendValidationErrorResponse(w http.ResponseWriter, errors interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(dto.Response{
-		Success: false,
-		Error:   "Validation failed",
-		Errors:  errors,
-	})
+	utils.SendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
 
 func (h *OrderHandler) toOrderListResponse(orders []*domain.Order) []*dto.OrderResponse {
