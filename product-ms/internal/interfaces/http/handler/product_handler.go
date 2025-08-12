@@ -24,16 +24,16 @@ func NewProductHandler(productService domain.ProductService) *ProductHandler {
 	}
 }
 
-// @Summary Create a new product
-// @Description Create a new product with details
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param product body dto.CreateProductRequest true "Product data"
-// @Success 201 {object} dto.Response
-// @Failure 400 {object} dto.Response
-// @Failure 500 {object} dto.Response
-// @Router /products [post]
+// @Summary      Create a new product
+// @Description  Create a new product with details
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        product  body      dto.CreateProductRequest  true  "Product data"
+// @Success      201      {object}  dto.Response
+// @Failure      400      {object}  dto.Response
+// @Failure      500      {object}  dto.Response
+// @Router       /products [post]
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -64,14 +64,15 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusCreated, productRes)
 }
 
-// @Summary Get product by ID
-// @Description Get product details by ID
-// @Tags products
-// @Produce json
-// @Param id path string true "Product ID"
-// @Success 200 {object} dto.Response
-// @Failure 404 {object} dto.Response
-// @Router /products/{id} [get]
+// @Summary      Get product by ID
+// @Description  Get product details by ID
+// @Tags         products
+// @Produce      json
+// @Param        id   path      string  true  "Product ID"
+// @Success      200  {object}  dto.Response
+// @Failure      404  {object}  dto.Response
+// @Failure      500  {object}  dto.Response
+// @Router       /products/{id} [get]
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -90,15 +91,16 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusOK, productRes)
 }
 
-// @Summary List products
-// @Description Get paginated list of products
-// @Tags products
-// @Produce json
-// @Param limit query int false "Limit" default(10)
-// @Param offset query int false "Offset" default(0)
-// @Param category query string false "Category filter"
-// @Success 200 {object} dto.Response
-// @Router /products [get]
+// @Summary      List products
+// @Description  Get paginated list of products
+// @Tags         products
+// @Produce      json
+// @Param        limit     query     int     false  "Limit"  default(10)
+// @Param        offset    query     int     false  "Offset"  default(0)
+// @Param        category  query     string  false  "Category filter"
+// @Success      200       {object}  dto.Response
+// @Failure      500       {object}  dto.Response
+// @Router       /products [get]
 func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit == 0 {
@@ -123,15 +125,17 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
-// @Summary Search products
-// @Description Search products by name or description
-// @Tags products
-// @Produce json
-// @Param q query string true "Search query"
-// @Param limit query int false "Limit" default(10)
-// @Param offset query int false "Offset" default(0)
-// @Success 200 {object} dto.Response
-// @Router /products/search [get]
+// @Summary      Search products
+// @Description  Search products by name or description
+// @Tags         products
+// @Produce      json
+// @Param        q       query     string  true   "Search query"
+// @Param        limit   query     int     false  "Limit"  default(10)
+// @Param        offset  query     int     false  "Offset"  default(0)
+// @Success      200     {object}  dto.Response
+// @Failure      400     {object}  dto.Response
+// @Failure      500     {object}  dto.Response
+// @Router       /products/search [get]
 func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
@@ -163,16 +167,18 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 	utils.SendSuccessResponse(w, http.StatusOK, productsRes)
 }
 
-// @Summary Update product
-// @Description Update product details
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param id path string true "Product ID"
-// @Param product body dto.CreateProductRequest true "Product data"
-// @Success 200 {object} dto.Response
-// @Failure 400 {object} dto.Response
-// @Router /products/{id} [put]
+// @Summary      Update product
+// @Description  Update product details
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                  true  "Product ID"
+// @Param        product  body      dto.CreateProductRequest  true  "Product data"
+// @Success      200      {object}  dto.Response
+// @Failure      400      {object}  dto.Response
+// @Failure      404      {object}  dto.Response
+// @Failure      500      {object}  dto.Response
+// @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -210,14 +216,15 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusOK, productRes)
 }
 
-// @Summary Delete product by ID
-// @Description Delete product details by ID
-// @Tags products
-// @Produce json
-// @Param id path string true "Product ID"
-// @Success 200 {object} dto.Response
-// @Failure 404 {object} dto.Response
-// @Router /products/{id} [delete]
+// @Summary      Delete product by ID
+// @Description  Delete product details by ID
+// @Tags         products
+// @Produce      json
+// @Param        id   path      string  true  "Product ID"
+// @Success      200  {object}  dto.Response
+// @Failure      404  {object}  dto.Response
+// @Failure      500  {object}  dto.Response
+// @Router       /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -234,16 +241,17 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusOK, "Product Deleted Successfully")
 }
 
-// @Summary Check stoke of a new product
-// @Description Check the stock of product
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param product body dto.StockCheckRequest true "CheckStock data"
-// @Success 200 {object} dto.Response
-// @Failure 400 {object} dto.Response
-// @Failure 404 {object} dto.Response
-// @Router /products/check-stock [post]
+// @Summary      Check product stock
+// @Description  Check the available stock for a given product and quantity
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        product  body      dto.StockCheckRequest  true  "CheckStock data"
+// @Success      200      {object}  dto.Response
+// @Failure      400      {object}  dto.Response
+// @Failure      404      {object}  dto.Response
+// @Failure      500      {object}  dto.Response
+// @Router       /products/check-stock [post]
 func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 	var req dto.StockCheckRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -269,16 +277,17 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 	utils.SendSuccessResponse(w, http.StatusOK, res)
 }
 
-// @Summary Check stoke of a new product
-// @Description Check the stock of product
-// @Tags products
-// @Accept json
-// @Produce json
-// @Param product body dto.StockUpdateRequest true "CheckStock data"
-// @Success 200 {object} dto.Response
-// @Failure 400 {object} dto.Response
-// @Failure 404 {object} dto.Response
-// @Router /products/reserve-stock [post]
+// @Summary      Reserve product stock
+// @Description  Reserve a given quantity of stock for a product
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        product  body      dto.StockUpdateRequest  true  "ReserveStock data"
+// @Success      200      {object}  dto.Response
+// @Failure      400      {object}  dto.Response
+// @Failure      404      {object}  dto.Response
+// @Failure      500      {object}  dto.Response
+// @Router       /products/reserve-stock [post]
 func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 	var req dto.StockUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
