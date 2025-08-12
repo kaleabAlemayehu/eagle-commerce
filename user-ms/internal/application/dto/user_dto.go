@@ -50,6 +50,11 @@ type AuthResponse struct {
 	Token string        `json:"token"`
 }
 
+type UserListResponse struct {
+	Users []UserResponse `json:"users"`
+	Total int            `json:"total"`
+}
+
 type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" validate:"required"`
 	NewPassword     string `json:"new_password" validate:"required,min=6"`

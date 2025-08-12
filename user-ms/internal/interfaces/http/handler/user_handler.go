@@ -104,8 +104,12 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	utils.SendSuccessResponse(w, http.StatusOK, users)
+	userList := h.toUserListResponse(users)
+	userListRes := dto.UserListResponse{
+		Users: userList,
+		Total: len(userList),
+	}
+	utils.SendSuccessResponse(w, http.StatusOK, userListRes)
 }
 
 // @Summary Put user by ID
@@ -206,4 +210,11 @@ func (h *UserHandler) toUserResponse(u *domain.User) *dto.UserResponse {
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}
+}
+func (h *UserHandler) toUserListResponse(users []*domain.User) []dto.UserResponse {
+	res := make([]dto.UserResponse, len(users))
+	for i, u := range users {
+		res[i] = *h.toUserResponse(u)
+	}
+	return res
 }
