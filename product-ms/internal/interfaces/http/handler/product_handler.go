@@ -252,7 +252,12 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 	}
 	ok, n, err := h.productService.CheckStock(r.Context(), req.ProductID, req.Quantity)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
+		if errors.Is(err, service.ErrProductNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		log.Printf("Internal server error in CheckStock: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
 	res := dto.StockCheckResponse{
@@ -285,7 +290,16 @@ func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.productService.ReserveStock(r.Context(), req.ProductID, req.Quantity); err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Product not found")
+		if errors.Is(err, service.ErrProductNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrInsufficientStock) {
+			utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		log.Printf("Internal server error in ReserveStock: %v", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Internal server error occured")
 		return
 	}
 	utils.SendSuccessResponse(w, http.StatusOK, "Stock reserved successfully")

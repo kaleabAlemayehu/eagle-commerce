@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrProductNotFound = errors.New("product not found")
+	ErrProductNotFound   = errors.New("product not found")
+	ErrInsufficientStock = errors.New("insufficient stock")
 )
 
 type ProductServiceImpl struct {
@@ -85,6 +86,9 @@ func (s *ProductServiceImpl) SearchProducts(ctx context.Context, query string, l
 func (s *ProductServiceImpl) CheckStock(ctx context.Context, id string, quantity int) (bool, int, error) {
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, repository.ErrProductNotFound) {
+			return false, -1, ErrProductNotFound
+		}
 		return false, -1, err
 	}
 
@@ -98,7 +102,7 @@ func (s *ProductServiceImpl) ReserveStock(ctx context.Context, id string, quanti
 	}
 
 	if !hasStock {
-		return errors.New("insufficient stock")
+		return ErrInsufficientStock
 	}
 
 	if err := s.repo.UpdateStock(ctx, id, -quantity); err != nil {
@@ -111,6 +115,9 @@ func (s *ProductServiceImpl) ReserveStock(ctx context.Context, id string, quanti
 func (s *ProductServiceImpl) RestoreStock(ctx context.Context, id string, quantity int) error {
 	product, err := s.repo.GetByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, repository.ErrProductNotFound) {
+			return ErrProductNotFound
+		}
 		return err
 	}
 
