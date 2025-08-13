@@ -20,11 +20,7 @@ func NewRouter(orderHandler *handler.OrderHandler, logger *slog.Logger, mode str
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	if mode == "production" {
-		r.Use(sharedMiddleware.SlogMiddleware(logger))
-	} else {
-		r.Use(sharedMiddleware.LoggingMiddleware())
-	}
+	r.Use(sharedMiddleware.SlogMiddleware(logger))
 	r.Use(middleware.Heartbeat("/health"))
 
 	// Swagger

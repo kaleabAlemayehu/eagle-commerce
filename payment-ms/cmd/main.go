@@ -13,12 +13,15 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
 
+	sharedLogger "github.com/kaleabAlemayehu/eagle-commerce/shared/logger"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
 func main() {
 	cfg := config.Load()
+
+	logger := sharedLogger.NewLogger().With("Service", "Payment")
 
 	db, err := database.NewMongoDB(cfg.MongoDB.URI, cfg.MongoDB.Database)
 	if err != nil {
@@ -42,7 +45,7 @@ func main() {
 	}
 
 	auth := sharedMiddleware.NewAuth(cfg.JWTSecret)
-	r := router.NewRouter(paymentHandler, auth)
+	r := router.NewRouter(paymentHandler, auth, logger)
 	port := "8084"
 	log.Printf("Product service starting on port %s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))

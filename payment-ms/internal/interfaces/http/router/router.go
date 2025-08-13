@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -9,14 +11,14 @@ import (
 	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(paymentHandler *handler.PaymentHandler, auth *sharedMiddleware.Auth) *chi.Mux {
+func NewRouter(paymentHandler *handler.PaymentHandler, auth *sharedMiddleware.Auth, logger *slog.Logger) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	r.Use(sharedMiddleware.LoggingMiddleware())
+	r.Use(sharedMiddleware.SlogMiddleware(logger))
 	r.Use(middleware.Heartbeat("/health"))
 
 	// Swagger

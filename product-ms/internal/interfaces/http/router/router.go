@@ -11,17 +11,13 @@ import (
 	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(productHandler *handler.ProductHandler, logger *slog.Logger, mode string) *chi.Mux {
+func NewRouter(productHandler *handler.ProductHandler, logger *slog.Logger) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
-	if mode == "production" {
-		r.Use(sharedMiddleware.SlogMiddleware(logger))
-	} else {
-		r.Use(sharedMiddleware.LoggingMiddleware())
-	}
+	r.Use(sharedMiddleware.SlogMiddleware(logger))
 
 	r.Use(middleware.Heartbeat("/health"))
 

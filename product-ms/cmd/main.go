@@ -29,7 +29,7 @@ func main() {
 	cfg := config.Load()
 
 	// Create logger
-	logger := sharedLogger.NewLogger()
+	logger := sharedLogger.NewLogger().With("Service", "Product")
 
 	// Connect to MongoDB
 	db, err := database.NewMongoDB(cfg.MongoDB.URI, cfg.MongoDB.Database)
@@ -48,15 +48,15 @@ func main() {
 
 	// Initialize dependencies
 	productRepo := repository.NewMongoProductRepository(db.Database)
-	productService := service.NewProductService(productRepo, nats, logger)
-	productHandler := handler.NewProductHandler(productService, logger)
+	productService := service.NewProductService(productRepo, nats)
+	productHandler := handler.NewProductHandler(productService)
 	if err = messaging.NewProductEventHandler(productService, natsClient).StartListening(); err != nil {
 		logger.Error("Failed to listen events: ", "error", err)
 		return
 	}
 
 	// Setup router
-	r := router.NewRouter(productHandler, logger, cfg.Environment)
+	r := router.NewRouter(productHandler, logger)
 
 	port := "8082"
 	server := http.Server{
