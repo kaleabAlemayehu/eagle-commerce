@@ -48,8 +48,8 @@ func main() {
 
 	// Initialize dependencies
 	productRepo := repository.NewMongoProductRepository(db.Database)
-	productService := service.NewProductService(productRepo, nats)
-	productHandler := handler.NewProductHandler(productService)
+	productService := service.NewProductService(productRepo, nats, logger)
+	productHandler := handler.NewProductHandler(productService, logger)
 	if err = messaging.NewProductEventHandler(productService, natsClient).StartListening(); err != nil {
 		logger.Error("Failed to listen events: ", "error", err)
 		return

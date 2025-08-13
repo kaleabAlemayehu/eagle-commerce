@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
 	messaging "github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/infrastructure/messaging"
@@ -16,14 +17,16 @@ var (
 )
 
 type ProductServiceImpl struct {
-	repo domain.ProductRepository
-	nats *messaging.ProductEventPublisher
+	repo   domain.ProductRepository
+	nats   *messaging.ProductEventPublisher
+	logger *slog.Logger
 }
 
-func NewProductService(repo domain.ProductRepository, nats *messaging.ProductEventPublisher) domain.ProductService {
+func NewProductService(repo domain.ProductRepository, nats *messaging.ProductEventPublisher, logger *slog.Logger) domain.ProductService {
 	return &ProductServiceImpl{
-		repo: repo,
-		nats: nats,
+		repo:   repo,
+		nats:   nats,
+		logger: logger.With("Service", "Product", "Layer", "Service"),
 	}
 }
 

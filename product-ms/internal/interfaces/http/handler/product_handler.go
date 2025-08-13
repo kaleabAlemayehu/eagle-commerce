@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -16,11 +17,13 @@ import (
 
 type ProductHandler struct {
 	productService domain.ProductService
+	logger         *slog.Logger
 }
 
-func NewProductHandler(productService domain.ProductService) *ProductHandler {
+func NewProductHandler(productService domain.ProductService, logger *slog.Logger) *ProductHandler {
 	return &ProductHandler{
 		productService: productService,
+		logger:         logger.With("Service", "Product", "Layer", "Handler"),
 	}
 }
 
