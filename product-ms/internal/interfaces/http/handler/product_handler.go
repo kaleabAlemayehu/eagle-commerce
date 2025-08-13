@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/dto"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/application/service"
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/domain"
+	"github.com/kaleabAlemayehu/eagle-commerce/shared/logger"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
@@ -51,12 +51,15 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newProduct, err := h.productService.CreateProduct(r.Context(), product)
+
 	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		log.Printf("Internal server error in CreateProduct: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in CreateProduct", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "An internal server error occurred")
 		return
 	}
@@ -82,7 +85,9 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
-		log.Printf("Internal server error in GetProduct: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in GetProduct", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "An internal server error occurred")
 		return
 	}
@@ -112,7 +117,9 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.productService.ListProducts(r.Context(), limit, offset, category)
 	if err != nil {
-		log.Printf("Internal server error in ListProducts: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in ListProducts", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
@@ -152,7 +159,9 @@ func (h *ProductHandler) SearchProducts(w http.ResponseWriter, r *http.Request) 
 
 	products, err := h.productService.SearchProducts(r.Context(), query, limit, offset)
 	if err != nil {
-		log.Printf("Internal server error in SearchProducts: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in SearchProducts", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
@@ -208,7 +217,8 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("Internal server error in UpdateProduct: %v", err)
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in UpdateProduct", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occoured")
 		return
 	}
@@ -233,7 +243,9 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
-		log.Printf("Internal server error in DeleteProduct: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in DeleteProduct", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error oocurred")
 		return
 	}
@@ -264,7 +276,9 @@ func (h *ProductHandler) CheckStock(w http.ResponseWriter, r *http.Request) {
 			utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
-		log.Printf("Internal server error in CheckStock: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in CheckStock", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error occured")
 		return
 	}
@@ -307,7 +321,9 @@ func (h *ProductHandler) ReserveStock(w http.ResponseWriter, r *http.Request) {
 			utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		log.Printf("Internal server error in ReserveStock: %v", err)
+
+		logger := logger.FromContext(r.Context()).With("Layer", "Handler")
+		logger.Error("Internal server error in ReserveStock", "error", err)
 		utils.SendErrorResponse(w, http.StatusInternalServerError, "Internal server error occured")
 		return
 	}
