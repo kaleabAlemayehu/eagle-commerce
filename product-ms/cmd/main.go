@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,6 +16,7 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
+	sharedLogger "github.com/kaleabAlemayehu/eagle-commerce/shared/logger"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
@@ -29,16 +28,21 @@ import (
 func main() {
 	cfg := config.Load()
 
+	// Create logger
+	logger := sharedLogger.NewLogger()
+
 	// Connect to MongoDB
 	db, err := database.NewMongoDB(cfg.MongoDB.URI, cfg.MongoDB.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
+		logger.Error("Failed to connect to MongoDB:", "error", err)
+		return
 	}
 
 	// Connect to NATS
 	natsClient, err := sharedMessaging.NewNATSClient(cfg.NATS.URL)
 	if err != nil {
-		log.Fatal("Failed to connect to NATS:", err)
+		logger.Error("Failed to connect to NATS:", "error", err)
+		return
 	}
 	nats := messaging.NewProductEventPublisher(natsClient)
 
@@ -47,11 +51,12 @@ func main() {
 	productService := service.NewProductService(productRepo, nats)
 	productHandler := handler.NewProductHandler(productService)
 	if err = messaging.NewProductEventHandler(productService, natsClient).StartListening(); err != nil {
-		log.Fatal("Failed to listen events: ", err)
+		logger.Error("Failed to listen events: ", "error", err)
+		return
 	}
 
 	// Setup router
-	r := router.NewRouter(productHandler)
+	r := router.NewRouter(productHandler, logger, cfg.Environment)
 
 	port := "8082"
 	server := http.Server{
@@ -63,26 +68,26 @@ func main() {
 
 	// Start server
 	go func() {
-		fmt.Printf("Product service starting on port %s\n", port)
+		logger.Info("Product service starting on port: " + port)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("ListenAndServer error err: %v", err)
+			logger.Error("ListenAndServer error ", "error", err)
 		}
 
 	}()
 	<-stop
 
-	log.Println("Shutting down gracefully...")
+	logger.Info("Shutting down gracefully...")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("HTTP server Shutdown error: %v", err)
+		logger.Error("HTTP server Shutdown error", "error", err)
 	}
 	natsClient.Close()
 
 	if err := db.Close(); err != nil {
-		log.Printf("Error closing MongoDB connection: %v", err)
+		logger.Error("Error closing MongoDB connection", "error", err)
 	}
 
-	log.Println("Server stopped")
+	logger.Info("Server stopped")
 
 }

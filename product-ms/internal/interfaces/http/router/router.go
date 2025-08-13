@@ -1,20 +1,28 @@
 package router
 
 import (
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/product-ms/internal/interfaces/http/handler"
+	sharedMiddleware "github.com/kaleabAlemayehu/eagle-commerce/shared/middleware"
 )
 
-func NewRouter(productHandler *handler.ProductHandler) *chi.Mux {
+func NewRouter(productHandler *handler.ProductHandler, logger *slog.Logger, mode string) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
+	if mode == "production" {
+		r.Use(sharedMiddleware.SlogMiddleware(logger))
+	} else {
+		r.Use(sharedMiddleware.LoggingMiddleware())
+	}
+
 	r.Use(middleware.Heartbeat("/health"))
 
 	// Swagger
