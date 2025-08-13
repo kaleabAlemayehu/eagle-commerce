@@ -1,11 +1,11 @@
 package middleware
 
 import (
+	"github.com/go-chi/chi/v5/middleware"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type responseWriter struct {
@@ -56,10 +56,11 @@ func LoggingMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-func StructuredLogMiddleware() func(http.Handler) http.Handler {
+func SlogMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
+			requestID := middleware.GetReqID(r.Context())
 
 			rw := &responseWriter{
 				ResponseWriter: w,
@@ -68,24 +69,17 @@ func StructuredLogMiddleware() func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rw, r)
 
-			log.Printf(`{
-                "timestamp": "%s",
-                "method": "%s",
-                "path": "%s",
-                "status": %d,
-                "bytes": %d,
-                "duration": "%v",
-                "user_agent": "%s",
-                "remote_addr": "%s"
-            }`,
-				start.Format(time.RFC3339),
-				r.Method,
-				r.URL.Path,
-				rw.statusCode,
-				rw.bytes,
-				time.Since(start),
-				r.UserAgent(),
-				r.RemoteAddr,
+			duration := time.Since(start)
+
+			// Log the request details using the structured logger
+			logger.Info("incoming request",
+				"request_id", requestID,
+				"method", r.Method,
+				"path", r.URL.Path,
+				"status", rw.statusCode,
+				"duration_ms", duration.Milliseconds(),
+				"bytes_written", rw.bytes,
+				"user_agent", r.UserAgent(),
 			)
 		})
 	}

@@ -1,6 +1,8 @@
 package router
 
 import (
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -11,7 +13,7 @@ import (
 
 // TODO: there is a lot of handlers to be impliment here
 
-func NewRouter(orderHandler *handler.OrderHandler, mode string) *chi.Mux {
+func NewRouter(orderHandler *handler.OrderHandler, logger *slog.Logger, mode string) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -19,7 +21,7 @@ func NewRouter(orderHandler *handler.OrderHandler, mode string) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	if mode == "production" {
-		r.Use(sharedMiddleware.StructuredLogMiddleware())
+		r.Use(sharedMiddleware.SlogMiddleware(logger))
 	} else {
 		r.Use(sharedMiddleware.LoggingMiddleware())
 	}

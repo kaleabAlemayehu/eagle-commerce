@@ -56,7 +56,7 @@ func main() {
 	mode := cfg.Environment
 
 	// Setup router
-	r := router.NewRouter(orderHandler, mode)
+	r := router.NewRouter(orderHandler, logger, mode)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
