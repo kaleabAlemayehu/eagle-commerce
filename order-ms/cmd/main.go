@@ -18,6 +18,7 @@ import (
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/interfaces/http/router"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/config"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/database"
+	sharedLogger "github.com/kaleabAlemayehu/eagle-commerce/shared/logger"
 	sharedMessaging "github.com/kaleabAlemayehu/eagle-commerce/shared/messaging"
 )
 
@@ -28,6 +29,9 @@ import (
 // @BasePath /api/v1
 func main() {
 	cfg := config.Load()
+
+	// create logerlogger
+	logger := sharedLogger.NewLogger()
 
 	// Connect to MongoDB
 	db, err := database.NewMongoDB(cfg.MongoDB.URI, cfg.MongoDB.Database)
