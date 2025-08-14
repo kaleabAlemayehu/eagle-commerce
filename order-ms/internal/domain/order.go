@@ -44,11 +44,11 @@ const (
 )
 
 type OrderRepository interface {
-	Create(ctx context.Context, order *Order) error
+	Create(ctx context.Context, order *Order) (*Order, error)
 	GetByID(ctx context.Context, id string) (*Order, error)
 	GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*Order, error)
-	Update(ctx context.Context, id string, order *Order) error
-	UpdateStatus(ctx context.Context, id string, status OrderStatus) error
+	Update(ctx context.Context, id string, order *Order) (*Order, error)
+	UpdateStatus(ctx context.Context, id string, status OrderStatus) (*Order, error)
 	List(ctx context.Context, limit, offset int) ([]*Order, error)
 }
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,6 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
+)
+
+var (
+	ErrOrderNotFound = errors.New("Order not found")
 )
 
 type MongoOrderRepository struct {
@@ -22,14 +27,16 @@ func NewMongoOrderRepository(db *mongo.Database) *MongoOrderRepository {
 	}
 }
 
-func (r *MongoOrderRepository) Create(ctx context.Context, order *domain.Order) error {
+func (r *MongoOrderRepository) Create(ctx context.Context, order *domain.Order) (*domain.Order, error) {
 	order.ID = primitive.NewObjectID()
 	order.Status = domain.OrderStatusPending
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
 
-	_, err := r.collection.InsertOne(ctx, order)
-	return err
+	if _, err := r.collection.InsertOne(ctx, order); err != nil {
+		return nil, err
+	}
+	return order, nil
 }
 
 func (r *MongoOrderRepository) GetByID(ctx context.Context, id string) (*domain.Order, error) {
@@ -39,8 +46,10 @@ func (r *MongoOrderRepository) GetByID(ctx context.Context, id string) (*domain.
 	}
 
 	var order domain.Order
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&order)
-	if err != nil {
+	if err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&order); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrOrderNotFound
+		}
 		return nil, err
 	}
 
@@ -72,23 +81,29 @@ func (r *MongoOrderRepository) GetByUserID(ctx context.Context, userID string, l
 	return orders, nil
 }
 
-func (r *MongoOrderRepository) Update(ctx context.Context, id string, order *domain.Order) error {
+func (r *MongoOrderRepository) Update(ctx context.Context, id string, order *domain.Order) (*domain.Order, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	order.UpdatedAt = time.Now()
 	update := bson.M{"$set": order}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	return err
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedOrder domain.Order
+	if err := r.collection.FindOneAndUpdate(ctx, bson.M{"_id": objectID}, update, opts).Decode(&updatedOrder); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
+	}
+	return nil, err
 }
 
-func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, status domain.OrderStatus) error {
+func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, status domain.OrderStatus) (*domain.Order, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	update := bson.M{
@@ -97,9 +112,18 @@ func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, stat
 			"updated_at": time.Now(),
 		},
 	}
-
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
-	return err
+	filter := bson.M{
+		"_id": objectID,
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedOrder domain.Order
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedOrder); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
+	}
+	return &updatedOrder, err
 }
 
 func (r *MongoOrderRepository) List(ctx context.Context, limit, offset int) ([]*domain.Order, error) {
