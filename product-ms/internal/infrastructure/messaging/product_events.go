@@ -3,6 +3,7 @@ package messaging
 import (
 	"context"
 	"encoding/json"
+	"github.com/nats-io/nats.go"
 	"log"
 	"time"
 
@@ -19,6 +20,11 @@ func NewProductEventPublisher(natsClient *messaging.NATSClient) *ProductEventPub
 	return &ProductEventPublisher{
 		natsClient: natsClient,
 	}
+}
+
+type OrderItem struct {
+	ProductID string `json:"product_id" bson:"product_id" validate:"required"`
+	Quantity  int    `json:"quantity" bson:"quantity" validate:"gt=0"`
 }
 
 func (p *ProductEventPublisher) PublishProductCreated(product *domain.Product) error {
@@ -92,7 +98,7 @@ func NewProductEventHandler(productService domain.ProductService, natsClient *me
 
 func (h *ProductEventHandler) StartListening() error {
 	// Subscribe to stock-related events
-	_, err := h.natsClient.Subscribe(models.StockCheckEvent, h.handleStockCheck)
+	_, err := h.natsClient.SubscribeToRequest(models.StockCheckEvent, h.handleStockCheck)
 	if err != nil {
 		return err
 	}
@@ -106,48 +112,35 @@ func (h *ProductEventHandler) StartListening() error {
 	return err
 }
 
-func (h *ProductEventHandler) handleStockCheck(data []byte) {
-	var event models.Event
-	if err := json.Unmarshal(data, &event); err != nil {
-		log.Printf("Error unmarshaling stock.check event: %v", err)
+func (h *ProductEventHandler) handleStockCheck(msg *nats.Msg) {
+	var data OrderItem
+	if err := json.Unmarshal(msg.Data, &data); err != nil {
+		log.Printf("Error unmarshaling stock.check request: %v", err)
+		msg.Respond([]byte("Error unmarshaling stock.check request"))
 		return
 	}
 
-	productID, ok := event.Data["product_id"].(string)
-	if !ok {
-		log.Printf("Invalid product_id in stock.check event")
-		return
-	}
-
-	quantity, ok := event.Data["quantity"].(float64)
-	if !ok {
-		log.Printf("Invalid quantity in stock.check event")
-		return
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	available, _, err := h.productService.CheckStock(ctx, productID, int(quantity))
+	available, _, err := h.productService.CheckStock(ctx, data.ProductID, int(data.Quantity))
 	if err != nil {
 		log.Printf("Error checking stock: %v", err)
+		msg.Respond([]byte("Error while checking the the stock"))
 		return
 	}
 
-	// Publish response
-	responseEvent := models.Event{
-		ID:     messaging.GenerateEventID(),
-		Type:   models.StockCheckResponseEvent,
-		Source: "product-service",
-		Data: map[string]interface{}{
-			"product_id": productID,
-			"quantity":   int(quantity),
-			"available":  available,
-			"request_id": event.ID,
-		},
-		Timestamp: time.Now(),
+	// send response
+	response := map[string]interface{}{
+		"available": available,
+	}
+	respBytes, err := json.Marshal(response)
+	if err != nil {
+		msg.Respond([]byte("Error unmarshaling stock.check response"))
+		return
 	}
 
-	h.natsClient.Publish(models.StockCheckResponseEvent, responseEvent)
+	msg.Respond(respBytes)
 }
 
 func (h *ProductEventHandler) handleStockReserve(data []byte) {
