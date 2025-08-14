@@ -1,6 +1,8 @@
 package messaging
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
@@ -118,4 +120,36 @@ func (p *OrderEventPublisher) PublishReserveStock(item *domain.OrderItem) error 
 		},
 	}
 	return p.natsClient.Publish(models.StockReserveEvent, event)
+}
+
+func (p *OrderEventPublisher) RequestStockCheck(item *domain.OrderItem) (bool, error) {
+
+	requestData := map[string]interface{}{
+		"product_id": item.ProductID,
+		"quantity":   item.Quantity,
+	}
+
+	// 2. Use the new Request function to send the request and wait
+	subject := models.StockCheckEvent
+	timeout := 5 * time.Second
+	msg, err := p.natsClient.Request(subject, requestData, timeout)
+	if err != nil {
+		return false, err
+	}
+
+	// 3. Decode the response from product-ms
+	var response struct {
+		Available bool   `json:"available"`
+		Error     string `json:"error,omitempty"`
+	}
+	if err := json.Unmarshal(msg.Data, &response); err != nil {
+		return false, err
+	}
+
+	if response.Error != "" {
+		return false, errors.New(response.Error)
+	}
+
+	return response.Available, nil
+
 }
