@@ -53,10 +53,10 @@ type OrderRepository interface {
 }
 
 type OrderService interface {
-	CreateOrder(ctx context.Context, order *Order) error
+	CreateOrder(ctx context.Context, order *Order) (*Order, error)
 	GetOrder(ctx context.Context, id string) (*Order, error)
 	GetOrdersByUser(ctx context.Context, userID string, limit, offset int) ([]*Order, error)
-	UpdateOrderStatus(ctx context.Context, id string, status OrderStatus) error
-	CancelOrder(ctx context.Context, id string) error
+	UpdateOrderStatus(ctx context.Context, id string, status OrderStatus) (*Order, error)
+	CancelOrder(ctx context.Context, id string) (*Order, error)
 	ListOrders(ctx context.Context, limit, offset int) ([]*Order, error)
 }

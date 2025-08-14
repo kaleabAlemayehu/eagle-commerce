@@ -6,7 +6,15 @@ import (
 
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/messaging"
+	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/infrastructure/repository"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
+)
+
+var (
+	ErrOrderNotFound                = errors.New("Order not found")
+	ErrInvalidOrderStatusTransition = errors.New("Invalid Order status transition")
+	ErrOrderStateChanged            = errors.New("Order status has changed, please try again")
+	ErrOrderCannotBeCancelled       = errors.New("Order cannot be cancled, it is too late...")
 )
 
 type OrderServiceImpl struct {
@@ -23,9 +31,9 @@ func NewOrderService(repo domain.OrderRepository, nats *messaging.OrderEventPubl
 	return service
 }
 
-func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order) error {
+func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error) {
 	if err := utils.ValidateStruct(order); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Calculate total
@@ -37,18 +45,23 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order)
 
 	// Check stock availability for all items
 	if err := s.checkStockAvailability(order.Items); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create order
-	if err := s.repo.Create(ctx, order); err != nil {
-		return err
+	newOrder, err := s.repo.Create(ctx, order)
+	if err != nil {
+		return nil, err
 	}
 
 	// Reserve stock for all items
 	s.reserveStock(order.Items)
 
-	return s.nats.PublishOrderCreated(order)
+	if err := s.nats.PublishOrderCreated(order); err != nil {
+		return nil, err
+	}
+
+	return newOrder, err
 }
 
 func (s *OrderServiceImpl) checkStockAvailability(items []domain.OrderItem) error {
@@ -56,7 +69,8 @@ func (s *OrderServiceImpl) checkStockAvailability(items []domain.OrderItem) erro
 		// Publish stock check request
 		s.nats.PublishStockCheck(&item)
 	}
-	return nil // In real implementation, wait for response
+	// TODO:wait for response
+	return nil
 }
 
 func (s *OrderServiceImpl) reserveStock(items []domain.OrderItem) {
@@ -66,35 +80,59 @@ func (s *OrderServiceImpl) reserveStock(items []domain.OrderItem) {
 }
 
 func (s *OrderServiceImpl) GetOrder(ctx context.Context, id string) (*domain.Order, error) {
-	return s.repo.GetByID(ctx, id)
+	order, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrOrderNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
+	}
+	return order, nil
 }
 
 func (s *OrderServiceImpl) GetOrdersByUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Order, error) {
 	return s.repo.GetByUserID(ctx, userID, limit, offset)
 }
 
-func (s *OrderServiceImpl) UpdateOrderStatus(ctx context.Context, id string, status domain.OrderStatus) error {
+func (s *OrderServiceImpl) UpdateOrderStatus(ctx context.Context, id string, status domain.OrderStatus) (*domain.Order, error) {
 	order, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		return err
+		if errors.Is(err, repository.ErrOrderNotFound) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
 	}
 
 	// Validate status transition
 	if !s.isValidStatusTransition(order.Status, status) {
-		return errors.New("invalid status transition")
+		return nil, ErrInvalidOrderStatusTransition
 	}
 
-	if err := s.repo.UpdateStatus(ctx, id, status); err != nil {
-		return err
+	updatedOrder, err := s.repo.UpdateStatus(ctx, id, order.Status, status)
+	if err != nil {
+		if errors.Is(err, repository.ErrOrderNotFound) {
+			return nil, ErrOrderStateChanged
+		}
+		return nil, err
 	}
 
 	// Publish order updated event
+	if err := s.nats.PublishOrderUpdated(updatedOrder, status); err != nil {
+		return nil, err
+	}
 
-	return s.nats.PublishOrderUpdated(order, status)
+	return updatedOrder, nil
 }
 
-func (s *OrderServiceImpl) CancelOrder(ctx context.Context, id string) error {
-	return s.UpdateOrderStatus(ctx, id, domain.OrderStatusCancelled)
+func (s *OrderServiceImpl) CancelOrder(ctx context.Context, id string) (*domain.Order, error) {
+	order, err := s.UpdateOrderStatus(ctx, id, domain.OrderStatusCancelled)
+	if err != nil {
+		if errors.Is(err, ErrInvalidOrderStatusTransition) {
+			return nil, ErrOrderCannotBeCancelled
+		}
+		return nil, err
+	}
+	return order, nil
 }
 
 func (s *OrderServiceImpl) ListOrders(ctx context.Context, limit, offset int) ([]*domain.Order, error) {
