@@ -97,10 +97,10 @@ func (r *MongoOrderRepository) Update(ctx context.Context, id string, order *dom
 		}
 		return nil, err
 	}
-	return nil, err
+	return &updatedOrder, err
 }
 
-func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, status domain.OrderStatus) (*domain.Order, error) {
+func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, currentStatus domain.OrderStatus, newStatus domain.OrderStatus) (*domain.Order, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -108,12 +108,13 @@ func (r *MongoOrderRepository) UpdateStatus(ctx context.Context, id string, stat
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":     status,
+			"status":     newStatus,
 			"updated_at": time.Now(),
 		},
 	}
 	filter := bson.M{
-		"_id": objectID,
+		"_id":    objectID,
+		"status": currentStatus,
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedOrder domain.Order
