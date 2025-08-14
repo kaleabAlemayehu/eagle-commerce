@@ -15,6 +15,7 @@ var (
 	ErrInvalidOrderStatusTransition = errors.New("Invalid Order status transition")
 	ErrOrderStateChanged            = errors.New("Order status has changed, please try again")
 	ErrOrderCannotBeCancelled       = errors.New("Order cannot be cancled, it is too late...")
+	ErrOrderOutOfStock              = errors.New("Order out of stock.")
 )
 
 type OrderServiceImpl struct {
@@ -44,8 +45,8 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order)
 	order.Total = total
 
 	// Check stock availability for all items
-	if err := s.checkStockAvailability(order.Items); err != nil {
-		return nil, err
+	if isAvailable := s.checkStockAvailability(order.Items); !isAvailable {
+		return nil, ErrOrderOutOfStock
 	}
 
 	// Create order
@@ -64,13 +65,17 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, order *domain.Order)
 	return newOrder, err
 }
 
-func (s *OrderServiceImpl) checkStockAvailability(items []domain.OrderItem) error {
+func (s *OrderServiceImpl) checkStockAvailability(items []domain.OrderItem) bool {
+	isAllAvailable := true
 	for _, item := range items {
-		// Publish stock check request
-		s.nats.PublishStockCheck(&item)
+		// using request instead of publish
+		isAvaliable, err := s.nats.RequestStockCheck(&item)
+		if err != nil || !isAvaliable {
+			isAllAvailable = false
+			break
+		}
 	}
-	// TODO:wait for response
-	return nil
+	return isAllAvailable
 }
 
 func (s *OrderServiceImpl) reserveStock(items []domain.OrderItem) {
