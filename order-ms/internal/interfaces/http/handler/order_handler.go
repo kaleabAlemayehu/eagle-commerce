@@ -2,12 +2,15 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/application/dto"
+	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/application/service"
 	"github.com/kaleabAlemayehu/eagle-commerce/order-ms/internal/domain"
+	"github.com/kaleabAlemayehu/eagle-commerce/shared/logger"
 	"github.com/kaleabAlemayehu/eagle-commerce/shared/utils"
 )
 
@@ -29,15 +32,17 @@ func NewOrderHandler(orderService domain.OrderService) *OrderHandler {
 // @Param order body dto.CreateOrderRequest true "Order data"
 // @Success 201 {object} dto.Response
 // @Failure 400 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders [post]
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	var req dto.CreateOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Error("Failed to decode request body", "error", err)
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// Convert request to domain model
 	items := make([]domain.OrderItem, len(req.Items))
 	for i, item := range req.Items {
 		items[i] = domain.OrderItem{
@@ -60,15 +65,18 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := h.orderService.CreateOrder(r.Context(), order); err != nil {
+	createdOrder, err := h.orderService.CreateOrder(r.Context(), order)
+	if err != nil {
 		if validationErrors := utils.GetValidationErrors(err); len(validationErrors) > 0 {
+			logger.Warn("Validation failed for creating order", "errors", validationErrors)
 			utils.SendValidationErrorResponse(w, validationErrors)
 			return
 		}
-		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+		logger.Error("Failed to create order", "error", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to create order")
 		return
 	}
-	orderRes := h.toOrderResponse(order)
+	orderRes := h.toOrderResponse(createdOrder)
 
 	utils.SendSuccessResponse(w, http.StatusCreated, orderRes)
 }
@@ -78,21 +86,25 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 // @Tags orders
 // @Produce json
 // @Success 200 {object} dto.Response
-// @Failure 404 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders [get]
 func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit == 0 {
 		limit = 10
 	}
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-	order, err := h.orderService.ListOrders(r.Context(), limit, offset)
+
+	orders, err := h.orderService.ListOrders(r.Context(), limit, offset)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
+		logger.Error("Failed to list orders", "error", err)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve orders")
 		return
 	}
-	orders := h.toOrderListResponse(order)
-	utils.SendSuccessResponse(w, http.StatusOK, orders)
+
+	ordersRes := h.toOrderListResponse(orders)
+	utils.SendSuccessResponse(w, http.StatusOK, ordersRes)
 }
 
 // @Summary Get order by ID
@@ -102,13 +114,21 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Order ID"
 // @Success 200 {object} dto.Response
 // @Failure 404 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	id := chi.URLParam(r, "id")
 
 	order, err := h.orderService.GetOrder(r.Context(), id)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
+		if errors.Is(err, service.ErrOrderNotFound) {
+			logger.Warn("Order not found", "order_id", id)
+			utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
+			return
+		}
+		logger.Error("Failed to get order", "error", err, "order_id", id)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve order")
 		return
 	}
 	orderRes := h.toOrderResponse(order)
@@ -124,20 +144,22 @@ func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
 // @Success 200 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders/user/{user_id} [get]
 func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	userID := chi.URLParam(r, "user_id")
 
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit == 0 {
 		limit = 10
 	}
-
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
 
 	orders, err := h.orderService.GetOrdersByUser(r.Context(), userID, limit, offset)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		logger.Error("Failed to get user orders", "error", err, "user_id", userID)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve user orders")
 		return
 	}
 	ordersRes := h.toOrderListResponse(orders)
@@ -154,23 +176,38 @@ func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 // @Param status body dto.UpdateOrderStatusRequest true "Status update"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
+// @Failure 404 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders/{id}/status [put]
 func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	id := chi.URLParam(r, "id")
 
 	var req dto.UpdateOrderStatusRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Error("Failed to decode request body", "error", err)
 		utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	status := domain.OrderStatus(req.Status)
-	if err := h.orderService.UpdateOrderStatus(r.Context(), id, status); err != nil {
-		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+	updatedOrder, err := h.orderService.UpdateOrderStatus(r.Context(), id, status)
+	if err != nil {
+		if errors.Is(err, service.ErrOrderNotFound) {
+			logger.Warn("Order not found for status update", "order_id", id)
+			utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
+			return
+		}
+		if errors.Is(err, service.ErrInvalidOrderStatusTransition) {
+			logger.Warn("Invalid order status for update", "order_id", id, "status", req.Status)
+			utils.SendErrorResponse(w, http.StatusBadRequest, "Invalid order status")
+			return
+		}
+		logger.Error("Failed to update order status", "error", err, "order_id", id)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to update order status")
 		return
 	}
 
-	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
 	utils.SendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
@@ -182,16 +219,30 @@ func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request)
 // @Param id path string true "Order ID"
 // @Success 200 {object} dto.Response
 // @Failure 400 {object} dto.Response
+// @Failure 404 {object} dto.Response
+// @Failure 500 {object} dto.Response
 // @Router /orders/{id}/cancel [put]
 func (h *OrderHandler) CancelOrder(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	id := chi.URLParam(r, "id")
 
-	if err := h.orderService.CancelOrder(r.Context(), id); err != nil {
-		utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+	updatedOrder, err := h.orderService.CancelOrder(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrOrderNotFound) {
+			logger.Warn("Order not found for cancellation", "order_id", id)
+			utils.SendErrorResponse(w, http.StatusNotFound, "Order not found")
+			return
+		}
+		if errors.Is(err, service.ErrOrderCannotBeCancelled) {
+			logger.Warn("Order cannot be cancelled", "order_id", id)
+			utils.SendErrorResponse(w, http.StatusBadRequest, "Order cannot be cancelled at its current status")
+			return
+		}
+		logger.Error("Failed to cancel order", "error", err, "order_id", id)
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "Failed to cancel order")
 		return
 	}
 
-	updatedOrder, _ := h.orderService.GetOrder(r.Context(), id)
 	updatedOrderRes := h.toOrderResponse(updatedOrder)
 	utils.SendSuccessResponse(w, http.StatusOK, updatedOrderRes)
 }
