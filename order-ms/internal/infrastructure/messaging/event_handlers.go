@@ -76,7 +76,7 @@ func (h *OrderEventHandler) handlePaymentProcessed(data []byte) {
 	ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancle()
 
-	if err := h.orderService.UpdateOrderStatus(ctx, orderID, newStatus); err != nil {
+	if _, err := h.orderService.UpdateOrderStatus(ctx, orderID, newStatus); err != nil {
 		log.Printf("Error updating order status: %v", err)
 		return
 	}
