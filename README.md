@@ -1,6 +1,6 @@
 # Eagle-Commerce Microservices Platform
 
-A scalable e-commerce platform built with Go microservices architecture, featuring clean architecture principles, event-driven communication, and containerized deployment as assignment for eaglelion.
+A scalable e-commerce platform built with Go microservices architecture, featuring clean architecture principles, event-driven communication, and containerized deployment.
 
 ## 🏗️ Architecture Overview
 
